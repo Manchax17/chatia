@@ -3,14 +3,48 @@ import { Settings, X, Info, Server, Activity } from 'lucide-react';
 import ModelSelector from './ModelSelector';
 import { apiService } from '../../services/apiService';
 
+// ✅ Añadido: Servicio para manejar la configuración
+const SETTINGS_KEY = 'chatfit_settings';
+
+const getSettings = () => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  } catch (error) {
+    console.warn('Error loading settings from localStorage:', error);
+    return {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  }
+};
+
+const updateSettings = (newSettings) => {
+  try {
+    const currentSettings = getSettings();
+    const updatedSettings = { ...currentSettings, ...newSettings };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
+    return updatedSettings;
+  } catch (error) {
+    console.warn('Error saving settings to localStorage:', error);
+    return newSettings;
+  }
+};
+
 const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
   const [apiInfo, setApiInfo] = useState(null);
   const [healthStatus, setHealthStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentSettings, setCurrentSettings] = useState(getSettings); // ✅ Estado para la configuración actual
 
   useEffect(() => {
     if (isOpen) {
       fetchData();
+      // ✅ Cargar configuración actual
+      setCurrentSettings(getSettings());
     }
   }, [isOpen]);
 
@@ -45,6 +79,18 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
     }
   };
 
+  // ✅ Nueva función para manejar el cambio de modelo
+  const handleModelChange = (provider, model) => {
+    const newSettings = { llmProvider: provider, modelName: model };
+    const updatedSettings = updateSettings(newSettings);
+    setCurrentSettings(updatedSettings);
+    
+    // ✅ Notificar al componente padre (App.jsx probablemente)
+    if (onModelChange) {
+      onModelChange(newSettings);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -71,7 +117,26 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)] scrollbar-thin">
           <div className="space-y-6">
             {/* Model Selector */}
-            <ModelSelector onModelChange={onModelChange} />
+            <ModelSelector 
+              onModelChange={handleModelChange} // ✅ Pasar la nueva función
+              currentSettings={currentSettings} // ✅ Pasar configuración actual
+            />
+
+            {/* Current Model Display */}
+            <div className="glass rounded-xl p-4 border border-gray-700">
+              <h3 className="text-sm font-semibold text-gray-300 mb-2">Modelo actual:</h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 border border-blue-500/30">
+                  {currentSettings.modelName}
+                </span>
+                <span className="text-xs px-2 py-1 bg-gray-500/20 rounded-full text-gray-300 border border-gray-500/30">
+                  {currentSettings.llmProvider}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Los cambios se aplican a la siguiente conversación
+              </p>
+            </div>
 
             {/* API Status */}
             <div className="glass rounded-xl p-6">

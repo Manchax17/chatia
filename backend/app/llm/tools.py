@@ -444,6 +444,30 @@ def analyze_heart_rate(current_hr: int, age: int, context: str = "reposo") -> st
 🔬 Fuente: American Heart Association
 """
 
+# ✅ NUEVA HERRAMIENTA: obtener perfil del usuario
+@tool
+def get_user_profile() -> str:
+    """
+    Obtiene el perfil del usuario desde la configuración.
+    
+    Returns:
+        Información del perfil del usuario (peso, altura, edad, género, nivel de actividad)
+    """
+    from ..config import settings
+    
+    profile = settings.mock_user_profile
+    
+    return f"""
+👤 **PERFIL DEL USUARIO**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎂 Edad: {profile.get('age', 'N/A')} años
+⚖️ Peso: {profile.get('weight_kg', 'N/A')} kg
+📏 Altura: {profile.get('height_cm', 'N/A')} cm
+🚻 Género: {profile.get('gender', 'N/A')}
+🏃‍♂️ Nivel de actividad: {profile.get('activity_level', 'N/A')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
 def get_tools():
     """Retorna lista de todas las herramientas disponibles"""
     return [
@@ -452,5 +476,6 @@ def get_tools():
         analyze_steps,
         calculate_target_heart_rate,
         calculate_daily_calories,
-        analyze_heart_rate
+        analyze_heart_rate,
+        get_user_profile  # ✅ Añadida al final
     ]

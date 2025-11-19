@@ -78,7 +78,7 @@ Thought: Ahora sé la respuesta final
 Final Answer: la respuesta final a la pregunta de entrada original
 
 CONTEXTO DEL USUARIO:
-{wearable_context}
+{full_context}
 
 IMPORTANTE:
 - USA las herramientas cuando sea apropiado
@@ -91,6 +91,8 @@ Question: {input}
 {agent_scratchpad}"""
 
         wearable_context = self._format_wearable_context()
+        user_profile_context = self._get_user_profile_context()
+        full_context = f"{wearable_context}\n\n{user_profile_context}"
         
         prompt = PromptTemplate(
             template=template,
@@ -101,7 +103,7 @@ Question: {input}
                     for tool in self.tools
                 ]) if self.tools else "No tools available",
                 "tool_names": ", ".join([tool.name for tool in self.tools]) if self.tools else "",
-                "wearable_context": wearable_context
+                "full_context": full_context  # ✅ esto sí
             }
         )
         
@@ -146,6 +148,22 @@ Question: {input}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
     
+    def _get_user_profile_context(self) -> str:
+        """Formatea el perfil del usuario para el prompt"""
+        from ..config import settings
+        profile = settings.mock_user_profile
+        
+        return f"""
+👤 PERFIL DEL USUARIO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎂 Edad: {profile.get('age', 'N/A')} años
+⚖️ Peso: {profile.get('weight_kg', 'N/A')} kg  
+📏 Altura: {profile.get('height_cm', 'N/A')} cm
+🚻 Género: {profile.get('gender', 'N/A')}
+🏃‍♂️ Nivel de actividad: {profile.get('activity_level', 'N/A')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
     def chat(self, message: str, chat_history: Optional[List[dict]] = None) -> dict:
         """
         Procesa mensaje del usuario

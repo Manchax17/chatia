@@ -5,11 +5,62 @@ import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import { chatService } from '../../services/chatService';
 
+// ✅ Añadido: Servicio para manejar la configuración
+const SETTINGS_KEY = 'chatfit_settings';
+
+const getSettings = () => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  } catch (error) {
+    console.warn('Error loading settings from localStorage:', error);
+    return {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  }
+};
+
+const updateSettings = (newSettings) => {
+  try {
+    const currentSettings = getSettings();
+    const updatedSettings = { ...currentSettings, ...newSettings };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
+    return updatedSettings;
+  } catch (error) {
+    console.warn('Error saving settings to localStorage:', error);
+    return newSettings;
+  }
+};
+
 const ChatInterface = ({ wearableData }) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [currentSettings, setCurrentSettings] = useState({
+    llmProvider: 'ollama',
+    modelName: 'gemma3:1b'
+  });
   const messagesEndRef = useRef(null);
+
+  // ✅ Cargar configuración al iniciar
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await getSettings();
+        setCurrentSettings({
+          llmProvider: settings.llmProvider || 'ollama',
+          modelName: settings.modelName || 'gemma3:1b'
+        });
+      } catch (err) {
+        console.warn('No se pudo cargar configuración, usando valores por defecto');
+      }
+    };
+    loadSettings();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -22,7 +73,6 @@ const ChatInterface = ({ wearableData }) => {
   const handleSendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
-    // Agregar mensaje del usuario
     const userMessage = {
       role: 'user',
       content: messageText,
@@ -34,25 +84,27 @@ const ChatInterface = ({ wearableData }) => {
     setError(null);
 
     try {
-      // Preparar historial
       const chatHistory = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      // Enviar mensaje
+      // ✅ ¡Ahora enviamos el proveedor y modelo seleccionado!
       const response = await chatService.sendMessage(
         messageText,
         chatHistory,
-        { includeWearable: true }
+        { 
+          includeWearable: true,
+          llmProvider: currentSettings.llmProvider,
+          modelName: currentSettings.modelName
+        }
       );
 
-      // Agregar respuesta del asistente
       const assistantMessage = {
         role: 'assistant',
         content: response.response,
         tools_used: response.tools_used,
-        model_info: response.model_info, // ← ¡Esto ya viene del backend!
+        model_info: response.model_info,
         timestamp: new Date(),
       };
 
@@ -62,7 +114,6 @@ const ChatInterface = ({ wearableData }) => {
       console.error('Error sending message:', err);
       setError(err.response?.data?.detail || 'Error al enviar el mensaje');
       
-      // Agregar mensaje de error
       const errorMessage = {
         role: 'assistant',
         content: 'Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo.',
@@ -91,7 +142,7 @@ const ChatInterface = ({ wearableData }) => {
           <div>
             <h2 className="text-xl font-bold text-white">Chat con CHATFIT AI</h2>
             <p className="text-sm text-gray-400">
-              Pregunta sobre fitness, salud o tus datos del wearable
+              {currentSettings.modelName} ({currentSettings.llmProvider})
             </p>
           </div>
           
@@ -106,7 +157,6 @@ const ChatInterface = ({ wearableData }) => {
           )}
         </div>
 
-        {/* Error banner */}
         {error && (
           <div className="mt-3 px-4 py-2 bg-red-900/30 border border-red-700 rounded-lg flex items-center gap-2 text-red-200">
             <AlertCircle size={16} />

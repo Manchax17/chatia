@@ -2,16 +2,56 @@ import React, { useState, useEffect } from 'react';
 import { Cpu, Check, AlertCircle, Loader } from 'lucide-react';
 import { chatService } from '../../services/chatService';
 
-const ModelSelector = ({ onModelChange }) => {
+// ✅ Añadido: Servicio para manejar la configuración
+const SETTINGS_KEY = 'chatfit_settings';
+
+const getSettings = () => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  } catch (error) {
+    console.warn('Error loading settings from localStorage:', error);
+    return {
+      llmProvider: 'ollama',
+      modelName: 'gemma3:1b'
+    };
+  }
+};
+
+const updateSettings = (newSettings) => {
+  try {
+    const currentSettings = getSettings();
+    const updatedSettings = { ...currentSettings, ...newSettings };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
+    return updatedSettings;
+  } catch (error) {
+    console.warn('Error saving settings to localStorage:', error);
+    return newSettings;
+  }
+};
+
+const ModelSelector = ({ onModelChange, currentSettings }) => {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedProvider, setSelectedProvider] = useState('ollama');
-  const [selectedModel, setSelectedModel] = useState(null);
+  // ✅ Usar la configuración actual como estado inicial
+  const [selectedProvider, setSelectedProvider] = useState(currentSettings?.llmProvider || 'ollama');
+  const [selectedModel, setSelectedModel] = useState(currentSettings?.modelName || 'gemma3:1b');
 
   useEffect(() => {
     fetchModels();
   }, []);
+
+  // ✅ Actualizar selección cuando cambie la configuración actual
+  useEffect(() => {
+    if (currentSettings) {
+      setSelectedProvider(currentSettings.llmProvider);
+      setSelectedModel(currentSettings.modelName);
+    }
+  }, [currentSettings]);
 
   const fetchModels = async () => {
     try {
@@ -24,11 +64,13 @@ const ModelSelector = ({ onModelChange }) => {
       
       setModels(data);
 
-      // Seleccionar provider y modelo actual
-      const currentProvider = data.find(p => p.available);
-      if (currentProvider) {
-        setSelectedProvider(currentProvider.provider);
-        setSelectedModel(currentProvider.current_model);
+      // ✅ Si no hay configuración actual, usar la del backend
+      if (!currentSettings) {
+        const currentProvider = data.find(p => p.available);
+        if (currentProvider) {
+          setSelectedProvider(currentProvider.provider);
+          setSelectedModel(currentProvider.current_model);
+        }
       }
     } catch (err) {
       console.error('❌ Error fetching models:', err);
@@ -42,15 +84,25 @@ const ModelSelector = ({ onModelChange }) => {
     const providerData = models.find(m => m.provider === provider);
     if (providerData && providerData.available) {
       setSelectedProvider(provider);
-      setSelectedModel(providerData.current_model);
+      // ✅ Usar el modelo actual del proveedor si no hay uno seleccionado
+      const modelToSelect = providerData.current_model || providerData.models[0];
+      setSelectedModel(modelToSelect);
+      
+      // ✅ Actualizar configuración y notificar
+      const newSettings = { llmProvider: provider, modelName: modelToSelect };
+      updateSettings(newSettings);
       if (onModelChange) {
-        onModelChange(provider, providerData.current_model);
+        onModelChange(provider, modelToSelect);
       }
     }
   };
 
   const handleModelChange = (model) => {
     setSelectedModel(model);
+    
+    // ✅ Actualizar configuración y notificar
+    const newSettings = { llmProvider: selectedProvider, modelName: model };
+    updateSettings(newSettings);
     if (onModelChange) {
       onModelChange(selectedProvider, model);
     }
