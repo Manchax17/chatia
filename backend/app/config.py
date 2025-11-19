@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     # ============================================
     # XIAOMI WEARABLE
     # ============================================
-    xiaomi_connection_method: Literal['mi_fitness', 'bluetooth', 'mock'] = 'mock'
+    xiaomi_connection_method: Literal['mi_fitness', 'bluetooth', 'mock', 'manual'] = 'mock'
     
     # Mi Fitness (Xiaomi Health)
     mi_fitness_email: str = ""

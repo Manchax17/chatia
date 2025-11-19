@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Upload, Check, X, Loader } from 'lucide-react';
 import { wearableService } from '../../services/wearableService';
+import { useWearable } from '../../WearableContext';
 
-const ManualDataForm = ({ onUpdate, onClose }) => {
+const ManualDataForm = ({ onClose }) => {
   const [formData, setFormData] = useState({
     steps: 0,
     calories: 0,
@@ -21,11 +22,13 @@ const ManualDataForm = ({ onUpdate, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const { setWearableData } = useWearable(); // Usar el contexto
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: parseFloat(value) || value
+      [name]: name === 'sleep_quality' ? value : parseFloat(value) || 0
     }));
   };
 
@@ -35,11 +38,31 @@ const ManualDataForm = ({ onUpdate, onClose }) => {
     setError(null);
 
     try {
-      const response = await wearableService.updateManualData(formData);
+      // Asegurarse de que todos los campos requeridos sean números válidos
+      const dataToSend = {
+        steps: parseInt(formData.steps) || 0,
+        calories: parseInt(formData.calories) || 0,
+        heart_rate: parseInt(formData.heart_rate) || 0,
+        sleep_hours: parseFloat(formData.sleep_hours) || 0,
+        distance_km: parseFloat(formData.distance_km) || 0,
+        active_minutes: parseInt(formData.active_minutes) || 0,
+        floors_climbed: parseInt(formData.floors_climbed) || 0,
+        resting_heart_rate: parseInt(formData.resting_heart_rate) || 0,
+        max_heart_rate: parseInt(formData.max_heart_rate) || 0,
+        sleep_quality: formData.sleep_quality || 'good',
+        stress_level: parseInt(formData.stress_level) || 50,
+        battery_level: parseInt(formData.battery_level) || 100,
+        device_model: formData.device_model || 'Xiaomi Mi Band'
+      };
+
+      const response = await wearableService.updateManualData(dataToSend);
       
       if (response.success) {
         alert('✅ Datos actualizados correctamente');
-        if (onUpdate) onUpdate();
+        
+        // Actualizar el estado global
+        setWearableData(response.data);
+        
         if (onClose) onClose();
       }
     } catch (err) {
@@ -267,7 +290,6 @@ const ManualDataForm = ({ onUpdate, onClose }) => {
           </button>
           <button
             type="submit"
-            onClick={handleSubmit}
             disabled={loading}
             className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >

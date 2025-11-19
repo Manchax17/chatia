@@ -4,9 +4,13 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
+import logging
 
 from ...iot.xiaomi_client import xiaomi_client
 from .models import WearableDataResponse, SyncResponse, ConnectionInfoResponse
+
+# Importar logger
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -20,15 +24,15 @@ class WearableUpdateRequest(BaseModel):
     calories: int
     heart_rate: int
     sleep_hours: float
-    distance_km: float = 0
-    active_minutes: int = 0
-    floors_climbed: int = 0
-    resting_heart_rate: int = 0
-    max_heart_rate: int = 0
-    sleep_quality: str = "good"
-    stress_level: int = 50
-    battery_level: int = 100
-    device_model: str = "Xiaomi Mi Band"
+    distance_km: Optional[float] = 0
+    active_minutes: Optional[int] = 0
+    floors_climbed: Optional[int] = 0
+    resting_heart_rate: Optional[int] = 0
+    max_heart_rate: Optional[int] = 0
+    sleep_quality: Optional[str] = "good"
+    stress_level: Optional[int] = 50
+    battery_level: Optional[int] = 100
+    device_model: Optional[str] = "Xiaomi Mi Band"
 
 # ============================================
 # ENDPOINTS
@@ -46,9 +50,29 @@ async def get_latest_wearable_data():
             success=True
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo datos del wearable: {str(e)}"
+        # Devolver datos simulados en caso de error
+        logger.error(f"Error obteniendo datos del wearable: {e}")
+        return WearableDataResponse(
+            data={
+                "steps": 0,
+                "calories": 0,
+                "heart_rate": 0,
+                "sleep_hours": 0.0,
+                "distance_km": 0.0,
+                "active_minutes": 0,
+                "floors_climbed": 0,
+                "resting_heart_rate": 0,
+                "max_heart_rate": 0,
+                "sleep_quality": "good",
+                "stress_level": 50,
+                "battery_level": 100,
+                "device_model": "Xiaomi Mi Band",
+                "timestamp": datetime.now(),
+                "connection_method": xiaomi_client.connection_method,
+                "mock_data": True
+            },
+            success=False,
+            error=str(e)
         )
 
 @router.get("/heart-rate", response_model=WearableDataResponse)
@@ -63,9 +87,11 @@ async def get_heart_rate():
             success=True
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo frecuencia cardíaca: {str(e)}"
+        logger.error(f"Error obteniendo frecuencia cardíaca: {e}")
+        return WearableDataResponse(
+            data={"heart_rate": 0, "timestamp": datetime.now()},
+            success=False,
+            error=str(e)
         )
 
 @router.get("/sleep", response_model=WearableDataResponse)
@@ -80,9 +106,18 @@ async def get_sleep_data():
             success=True
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo datos de sueño: {str(e)}"
+        logger.error(f"Error obteniendo datos de sueño: {e}")
+        return WearableDataResponse(
+            data={
+                "sleep_hours": 0.0,
+                "sleep_quality": "good",
+                "deep_sleep": 0.0,
+                "light_sleep": 0.0,
+                "rem_sleep": 0.0,
+                "timestamp": datetime.now()
+            },
+            success=False,
+            error=str(e)
         )
 
 @router.get("/activities", response_model=WearableDataResponse)
@@ -97,9 +132,11 @@ async def get_activities():
             success=True
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo actividades: {str(e)}"
+        logger.error(f"Error obteniendo actividades: {e}")
+        return WearableDataResponse(
+            data={"activities": []},
+            success=False,
+            error=str(e)
         )
 
 @router.post("/sync", response_model=SyncResponse)
@@ -115,9 +152,12 @@ async def sync_wearable():
             success=True
         )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error sincronizando: {str(e)}"
+        logger.error(f"Error sincronizando: {e}")
+        return SyncResponse(
+            message="Error al sincronizar",
+            data={},
+            success=False,
+            error=str(e)
         )
 
 @router.get("/connection-info", response_model=ConnectionInfoResponse)
@@ -127,11 +167,27 @@ async def get_connection_info():
     """
     try:
         info = xiaomi_client.get_connection_info()
-        return ConnectionInfoResponse(**info)
+        # Mapear los campos que devuelve xiaomi_client a los que espera ConnectionInfoResponse
+        return ConnectionInfoResponse(
+            method=info.get("method", "unknown"),
+            available_methods=info.get("available_methods", ["mi_fitness", "bluetooth", "mock", "manual"]),
+            using_mock=info.get("mock_enabled", False),  # Mapear mock_enabled a using_mock
+            mi_fitness_configured=info.get("method") == "mi_fitness",  # Inferir configuración
+            bluetooth_configured=info.get("method") == "bluetooth",   # Inferir configuración
+            status=info.get("status", "unknown"),
+            device_model=info.get("device_model", "Unknown")
+        )
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error obteniendo información de conexión: {str(e)}"
+        logger.error(f"Error obteniendo información de conexión: {e}") # Usar logger aquí
+        # Devolver una respuesta válida incluso si falla
+        return ConnectionInfoResponse(
+            method=xiaomi_client.connection_method,
+            available_methods=["mi_fitness", "bluetooth", "mock", "manual"],
+            using_mock=xiaomi_client.use_mock,
+            mi_fitness_configured=False,
+            bluetooth_configured=False,
+            status="error",
+            device_model="Unknown"
         )
 
 @router.post("/update-manual", response_model=WearableDataResponse)
@@ -151,7 +207,7 @@ async def update_manual_data(data: WearableUpdateRequest):
             )
         
         # Actualizar datos
-        xiaomi_client.client.update_data(data.dict())
+        xiaomi_client.update_data(data.dict())
         
         # Retornar datos actualizados
         updated_data = await xiaomi_client.get_daily_summary()
@@ -164,7 +220,11 @@ async def update_manual_data(data: WearableUpdateRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error actualizando datos: {str(e)}"
+        logger.error(f"Error actualizando datos: {e}")
+        # Devolver los datos actuales en caso de error
+        current_data = await xiaomi_client.get_daily_summary()
+        return WearableDataResponse(
+            data=current_data,
+            success=False,
+            error=str(e)
         )

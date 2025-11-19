@@ -14,6 +14,10 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     console.log(`🚀 ${config.method.toUpperCase()} ${config.url}`);
+    // Asegurarse de que los datos sean serializables
+    if (config.data && typeof config.data === 'object') {
+      config.data = JSON.parse(JSON.stringify(config.data));
+    }
     return config;
   },
   (error) => {
