@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertCircle, RefreshCw, Bot } from 'lucide-react';import MessageBubble from './MessageBubble';
+import { AlertCircle, RefreshCw, Bot } from 'lucide-react';
+import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import { chatService } from '../../services/chatService';
@@ -51,7 +52,7 @@ const ChatInterface = ({ wearableData }) => {
         role: 'assistant',
         content: response.response,
         tools_used: response.tools_used,
-        model_info: response.model_info,
+        model_info: response.model_info, // ← ¡Esto ya viene del backend!
         timestamp: new Date(),
       };
 

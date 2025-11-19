@@ -16,7 +16,12 @@ class XiaomiClient:
         """Inicializa el cliente según configuración"""
         print(f"🔧 Inicializando Xiaomi Client: {self.connection_method}")
         
-        if self.connection_method == "mock" or settings.use_mock_wearable:
+        if self.connection_method == "manual":
+            from .manual_data_client import manual_client
+            self.client = manual_client
+            print("✅ Usando carga manual de datos")
+            
+        elif self.connection_method == "mock" or settings.use_mock_wearable:
             from .mock_wearable import mock_client
             self.client = mock_client
             print("✅ Usando datos simulados (MOCK)")
@@ -104,9 +109,10 @@ class XiaomiClient:
         return {
             "method": self.connection_method,
             "using_mock": settings.use_mock_wearable,
-            "available_methods": ["mi_fitness", "bluetooth", "mock"],
+            "available_methods": ["mi_fitness", "bluetooth", "manual", "mock"],
             "mi_fitness_configured": bool(settings.mi_fitness_email),
-            "bluetooth_configured": bool(settings.xiaomi_mac_address)
+            "bluetooth_configured": bool(settings.xiaomi_mac_address),
+            "manual_mode_available": True
         }
 
 # Instancia global

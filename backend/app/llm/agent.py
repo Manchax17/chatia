@@ -3,9 +3,9 @@
 from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.prompts import PromptTemplate
 from typing import Optional, List, Dict
+import traceback
 
 from .tools import get_tools
-from .prompts import get_system_prompt
 from .llm_factory import LLMFactory
 from ..config import settings
 
@@ -32,13 +32,32 @@ class ChatFitAgent:
                 provider=self.llm_provider,
                 model_name=self.model_name
             )
-            self.tools = get_tools()
-            self.agent_executor = self._create_agent()
-            print(f"✅ Agente inicializado correctamente")
+            print(f"✅ LLM creado exitosamente")
+            
+            # Crear herramientas de forma segura
+            try:
+                self.tools = get_tools()
+                print(f"✅ {len(self.tools)} herramientas creadas")
+            except Exception as e:
+                print(f"⚠️ Error creando herramientas: {e}")
+                self.tools = []
+            
+            # Crear agente de forma segura
+            try:
+                self.agent_executor = self._create_agent()
+                print(f"✅ Agente inicializado correctamente")
+            except Exception as e:
+                print(f"⚠️ Error creando agente: {e}")
+                print(f"   Usando LLM directo como fallback")
+                self.agent_executor = None
+                
         except Exception as e:
             print(f"❌ Error inicializando agente: {e}")
-            raise
-        
+            traceback.print_exc()
+            self.llm = None
+            self.tools = []
+            self.agent_executor = None
+    
     def _create_agent(self) -> AgentExecutor:
         """Crea el agente ReAct con herramientas"""
         
@@ -80,8 +99,8 @@ Question: {input}
                 "tools": "\n".join([
                     f"- {tool.name}: {tool.description}" 
                     for tool in self.tools
-                ]),
-                "tool_names": ", ".join([tool.name for tool in self.tools]),
+                ]) if self.tools else "No tools available",
+                "tool_names": ", ".join([tool.name for tool in self.tools]) if self.tools else "",
                 "wearable_context": wearable_context
             }
         )
@@ -93,7 +112,7 @@ Question: {input}
             prompt=prompt
         )
         
-        # Executor con configuración
+        # Executor con configuración segura
         agent_executor = AgentExecutor(
             agent=agent,
             tools=self.tools,
@@ -139,6 +158,14 @@ Question: {input}
             dict con respuesta, tools usadas y metadata
         """
         try:
+            # Verificar si tenemos LLM disponible
+            if not self.llm:
+                return {
+                    "response": "Lo siento, el sistema de IA no está disponible en este momento. Por favor verifica la configuración.",
+                    "error": "LLM no disponible",
+                    "success": False
+                }
+            
             # Construir input con historial si existe
             full_input = message
             if chat_history and len(chat_history) > 0:
@@ -148,37 +175,70 @@ Question: {input}
                 ])
                 full_input = f"HISTORIAL RECIENTE:\n{history_text}\n\nPREGUNTA ACTUAL: {message}"
             
-            # Invocar agente
-            print(f"💬 Procesando: {message[:50]}...")
-            response = self.agent_executor.invoke({"input": full_input})
-            
-            # Extraer tools usadas
-            tools_used = []
-            if response.get("intermediate_steps"):
-                for step in response["intermediate_steps"]:
+            # Si tenemos agente_executor, usarlo
+            if self.agent_executor:
+                print(f"💬 Procesando con agente: {message[:50]}...")
+                response = self.agent_executor.invoke({"input": full_input})
+                
+                # Extraer tools usadas
+                tools_used = []
+                if response.get("intermediate_steps"):
+                    for step in response["intermediate_steps"]:
+                        try:
+                            tool_action = step[0]
+                            tools_used.append({
+                                "tool": tool_action.tool,
+                                "input": str(tool_action.tool_input)
+                            })
+                        except Exception as e:
+                            print(f"⚠️ Error extrayendo tool info: {e}")
+                
+                return {
+                    "response": response["output"],
+                    "tools_used": tools_used,
+                    "model_info": {
+                        "provider": self.llm_provider,
+                        "model": self.model_name or "default"
+                    },
+                    "wearable_data_used": bool(self.wearable_data),
+                    "success": True
+                }
+            else:
+                # Fallback: usar LLM directamente sin agente
+                print(f"💬 Procesando con LLM directo: {message[:50]}...")
+                
+                # Si hay datos del wearable, incluirlos en el mensaje
+                context = self._format_wearable_context()
+                full_input_with_context = f"{context}\n\nUsuario: {full_input}\nAsistente:"
+                
+                # Para LLM directo, usar el método invoke o generate
+                try:
+                    # Intentar con invoke
+                    result = self.llm.invoke(full_input_with_context)
+                    response_text = str(result)
+                except Exception as e:
+                    print(f"⚠️ Error con invoke, intentando con generate: {e}")
                     try:
-                        tool_action = step[0]
-                        tools_used.append({
-                            "tool": tool_action.tool,
-                            "input": str(tool_action.tool_input)
-                        })
-                    except Exception as e:
-                        print(f"⚠️ Error extrayendo tool info: {e}")
-            
-            return {
-                "response": response["output"],
-                "tools_used": tools_used,
-                "model_info": {
-                    "provider": self.llm_provider,
-                    "model": self.model_name or "default"
-                },
-                "wearable_data_used": bool(self.wearable_data),
-                "success": True
-            }
-            
+                        # Intentar con generate
+                        result = self.llm.generate([full_input_with_context])
+                        response_text = result.generations[0][0].text if result.generations else "No se pudo generar respuesta"
+                    except Exception as e2:
+                        print(f"❌ Error con generate: {e2}")
+                        response_text = "Lo siento, no pude procesar tu mensaje en este momento."
+                
+                return {
+                    "response": response_text,
+                    "tools_used": [],
+                    "model_info": {
+                        "provider": self.llm_provider,
+                        "model": self.model_name or "default"
+                    },
+                    "wearable_data_used": bool(self.wearable_data),
+                    "success": True
+                }
+                
         except Exception as e:
             print(f"❌ Error en agente: {e}")
-            import traceback
             traceback.print_exc()
             
             return {
@@ -190,5 +250,5 @@ Question: {input}
     def update_wearable_data(self, new_data: dict):
         """Actualiza datos del wearable y recrea el agente"""
         self.wearable_data = new_data
-        self.agent_executor = self._create_agent()
+        # No recrear el agente aquí para evitar problemas
         print("✅ Datos del wearable actualizados")

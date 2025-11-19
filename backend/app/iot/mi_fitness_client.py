@@ -28,6 +28,13 @@ class MiFitnessClient:
         self.access_token: Optional[str] = None
         self.user_id: Optional[str] = None
         
+        # Siempre usar mock en modo desarrollo
+        if settings.use_mock_wearable:
+            from .mock_wearable import mock_client
+            self.client = mock_client
+        else:
+            self.client = self  # Usar métodos propios
+    
     def _encrypt_password(self, password: str) -> str:
         """Encripta password para autenticación"""
         try:
@@ -81,6 +88,10 @@ class MiFitnessClient:
     
     async def get_daily_summary(self, target_date: Optional[date] = None) -> Dict:
         """Obtiene resumen diario"""
+        if settings.use_mock_wearable:
+            from .mock_wearable import mock_client
+            return await mock_client.get_daily_summary()
+        
         if not self.access_token and not await self.authenticate():
             print("⚠️ Fallback a datos mock")
             from .mock_wearable import mock_client
@@ -132,6 +143,9 @@ class MiFitnessClient:
             "floors_climbed": data.get("climb_floors", 0),
             "resting_heart_rate": data.get("resting_heart_rate", 0),
             "max_heart_rate": data.get("max_heart_rate", 0),
+            "sleep_quality": "unknown",
+            "stress_level": 0,
+            "battery_level": 0,
             "last_sync": datetime.now().isoformat(),
             "device_model": data.get("device_name", "Xiaomi Wearable"),
             "connection_method": "mi_fitness",
@@ -159,8 +173,32 @@ class MiFitnessClient:
             "light_sleep_hours": sleep_hours * 0.55,
             "rem_sleep_hours": sleep_hours * 0.15,
             "awake_time_hours": sleep_hours * 0.05,
-            "sleep_score": 0,  # Requiere endpoint específico
+            "sleep_score": 0,
+            "bedtime": "Unknown",
+            "wake_time": "Unknown",
+            "interruptions": 0,
             "mock_data": summary.get("mock_data", False)
         }
+    
+    async def get_activity_sessions(self) -> list:
+        """Obtiene sesiones de actividad"""
+        return []
+    
+    async def sync(self) -> Dict:
+        """Sincroniza con Mi Fitness"""
+        if await self.authenticate():
+            return {
+                "status": "success",
+                "message": "Sincronizado con Mi Fitness",
+                "last_sync": datetime.now().isoformat(),
+                "mock_data": False
+            }
+        return {
+            "status": "failed",
+            "message": "No se pudo conectar con Mi Fitness",
+            "last_sync": datetime.now().isoformat(),
+            "mock_data": False
+        }
 
-mi_fitness_client = MiFitnessClient()
+# Instancia global
+xiaomi_client = MiFitnessClient()

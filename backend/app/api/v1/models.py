@@ -1,7 +1,7 @@
 """Modelos Pydantic para la API"""
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 
 class Message(BaseModel):
     """Mensaje en el chat"""
@@ -21,7 +21,7 @@ class ChatResponse(BaseModel):
     response: str = Field(..., description="Respuesta del asistente")
     tools_used: List[Dict] = Field(default=[], description="Herramientas utilizadas")
     wearable_data: Optional[Dict] = Field(default=None, description="Datos del wearable usados")
-    model_info: Dict = Field(..., description="Información del modelo usado")
+    model_info: Dict = Field(default={}, description="Información del modelo usado")
     success: bool = Field(..., description="Si la operación fue exitosa")
     error: Optional[str] = Field(default=None, description="Mensaje de error si hubo")
 
@@ -40,8 +40,8 @@ class SyncResponse(BaseModel):
 class ModelListResponse(BaseModel):
     """Lista de modelos disponibles"""
     provider: str
-    models: List[str]
-    current_model: str
+    models: List[str] = Field(default=[])
+    current_model: str = Field(default="")
     available: bool
 
 class ConnectionInfoResponse(BaseModel):

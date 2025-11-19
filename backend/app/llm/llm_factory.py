@@ -4,19 +4,79 @@ from langchain_openai import ChatOpenAI
 from langchain_community.llms import Ollama
 from langchain_community.llms import HuggingFacePipeline
 from langchain.llms.base import LLM
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import torch
-from typing import Literal, Optional
+from typing import Literal, Optional, Any, List
 import httpx
-
+from groq import Groq
 from ..config import settings
 
+
 class LLMFactory:
-    """Factory para crear LLMs"""
+
+    """Listar los modelos reales del OLLAMA"""
+    @staticmethod
+    def get_ollama_models() -> list:
+        """Obtiene modelos reales disponibles en Ollama"""
+        try:
+            response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=15)
+            if response.status_code == 200:
+                data = response.json()
+                return [model["name"] for model in data.get("models", [])]
+            else:
+                return []
+        except Exception:
+            return []
+        
+    @staticmethod
+    def _create_groq(model_name: Optional[str] = None, **kwargs) -> BaseChatModel:
+        """Crea LLM de Groq"""
+        if not settings.groq_api_key:
+            raise ValueError("GROQ_API_KEY no configurada")
+        
+        client = Groq(api_key=settings.groq_api_key)
+        
+        class GroqChat(BaseChatModel):
+            def __init__(self, model_name: str, temperature: float = 0.3):
+                self.model_name = model_name
+                self.temperature = temperature
+                self.client = Groq(api_key=settings.groq_api_key)
+            
+            def _generate(self, messages: List[Any], **kwargs) -> Any:
+                # Convertir mensajes a formato Groq
+                groq_messages = []
+                for msg in messages:
+                    if isinstance(msg, HumanMessage):
+                        groq_messages.append({"role": "user", "content": msg.content})
+                    elif isinstance(msg, AIMessage):
+                        groq_messages.append({"role": "assistant", "content": msg.content})
+                    elif isinstance(msg, SystemMessage):
+                        groq_messages.append({"role": "system", "content": msg.content})
+                
+                completion = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=groq_messages,
+                    temperature=self.temperature,
+                    max_tokens=1024
+                )
+                
+                return completion.choices[0].message.content
+            
+            @property
+            def _llm_type(self) -> str:
+                return "groq"
+        
+        return GroqChat(
+            model_name=model_name or settings.groq_model,
+            temperature=kwargs.get('temperature', settings.groq_temperature)
+        )
     
+    """Factory para crear LLMs"""
     @staticmethod
     def create_llm(
-        provider: Optional[Literal['openai', 'ollama', 'huggingface']] = None,
+        provider: Optional[Literal['openai', 'ollama', 'huggingface', 'groq']] = None,
         model_name: Optional[str] = None,
         **kwargs
     ) -> LLM:
@@ -24,7 +84,7 @@ class LLMFactory:
         Crea instancia de LLM según proveedor
         
         Args:
-            provider: 'openai', 'ollama', 'huggingface'
+            provider: 'openai', 'ollama', 'huggingface', 'groq'
             model_name: Nombre del modelo específico
             **kwargs: Parámetros adicionales
         """
@@ -38,6 +98,8 @@ class LLMFactory:
             return LLMFactory._create_ollama(model_name, **kwargs)
         elif provider == 'huggingface':
             return LLMFactory._create_huggingface(model_name, **kwargs)
+        elif provider == 'groq':
+            return LLMFactory._create_groq(model_name, **kwargs)
         else:
             raise ValueError(f"Proveedor no soportado: {provider}")
     
@@ -59,7 +121,7 @@ class LLMFactory:
         """Crea LLM de Ollama"""
         # Verificar que Ollama esté corriendo
         try:
-            response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=2)
+            response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=5)
             if response.status_code != 200:
                 raise Exception("Ollama no responde")
         except Exception as e:
@@ -134,18 +196,26 @@ class LLMFactory:
     @staticmethod
     def get_available_models() -> dict:
         """Retorna modelos disponibles por proveedor"""
-        return {
+        models = {
             "ollama": settings.available_ollama_models,
             "huggingface": settings.available_huggingface_models,
-            "openai": settings.available_openai_models
+            "openai": settings.available_openai_models,
+            "groq": settings.available_groq_models
         }
+        
+        # Actualizar modelos de Ollama con los reales
+        ollama_models = LLMFactory.get_ollama_models()
+        if ollama_models:
+            models["ollama"] = ollama_models
+        
+        return models
     
     @staticmethod
     def validate_provider(provider: str) -> bool:
         """Valida si el proveedor está disponible"""
         if provider == "ollama":
             try:
-                response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=2)
+                response = httpx.get(f"{settings.ollama_base_url}/api/tags", timeout=15)
                 return response.status_code == 200
             except:
                 return False
@@ -153,4 +223,6 @@ class LLMFactory:
             return True  # Siempre disponible si hay espacio en disco
         elif provider == "openai":
             return bool(settings.openai_api_key)
+        elif provider == "groq":
+            return bool(settings.groq_api_key)
         return False

@@ -1,7 +1,8 @@
 """Endpoints del chat"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends, Request
 from datetime import datetime
+from typing import Optional
 
 from ...llm.agent import ChatFitAgent
 from ...llm.llm_factory import LLMFactory
@@ -13,8 +14,11 @@ router = APIRouter()
 # Cache de datos del wearable
 _wearable_cache = {"data": None, "timestamp": None}
 
+# Cache de modelos por sesión
+_session_models = {}
+
 @router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, request_obj: Request):
     """
     Endpoint principal del chat
     
@@ -24,6 +28,19 @@ async def chat(request: ChatRequest):
     - Retorna respuesta enriquecida
     """
     try:
+        # Obtener ID de sesión (puedes usar IP o un token si lo tienes)
+        session_id = request_obj.client.host if request_obj.client else "default"
+        
+        # Si se especifica un proveedor o modelo, actualizar la sesión
+        llm_provider = request.llm_provider or _session_models.get(session_id, {}).get("provider", "ollama")
+        model_name = request.model_name or _session_models.get(session_id, {}).get("model", "gemma3:1b")
+        
+        # Guardar en caché de sesión
+        _session_models[session_id] = {
+            "provider": llm_provider,
+            "model": model_name
+        }
+        
         # Obtener datos del wearable si se solicita
         wearable_data = None
         if request.include_wearable:
@@ -44,8 +61,8 @@ async def chat(request: ChatRequest):
         # Crear agente con configuración
         agent = ChatFitAgent(
             wearable_data=wearable_data,
-            llm_provider=request.llm_provider,
-            model_name=request.model_name
+            llm_provider=llm_provider,
+            model_name=model_name
         )
         
         # Convertir historial a formato dict
@@ -90,24 +107,43 @@ async def list_available_models():
         for provider, models in available_models.items():
             is_available = LLMFactory.validate_provider(provider)
             
-            current_model = None
+            # Asegurar que current_model sea siempre una cadena
+            current_model = ""
             if provider == 'ollama':
-                current_model = settings.ollama_model
+                current_model = settings.ollama_model or ""
             elif provider == 'huggingface':
-                current_model = settings.huggingface_model
+                current_model = settings.huggingface_model or ""
             elif provider == 'openai':
-                current_model = settings.openai_model
+                current_model = settings.openai_model or ""
+            elif provider == 'groq':  # Si agregaste Groq
+                current_model = settings.groq_model or ""
             
-            response.append(ModelListResponse(
-                provider=provider,
-                models=models,
-                current_model=current_model,
-                available=is_available
-            ))
+            # Asegurar que models sea siempre una lista de cadenas
+            if not isinstance(models, list):
+                models = []
+            
+            # Filtrar solo cadenas válidas
+            filtered_models = []
+            for model in models:
+                if isinstance(model, str) and model.strip():
+                    filtered_models.append(model)
+            
+            # Crear respuesta segura
+            model_list_response = {
+                "provider": provider,
+                "models": filtered_models,
+                "current_model": current_model,
+                "available": is_available
+            }
+            
+            response.append(model_list_response)
         
         return response
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
+        
         raise HTTPException(
             status_code=500,
             detail=f"Error listando modelos: {str(e)}"

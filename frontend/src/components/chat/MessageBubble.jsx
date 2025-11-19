@@ -1,9 +1,37 @@
 import React from 'react';
-import { User, Bot, CheckCircle, AlertCircle } from 'lucide-react';
+import { User, Bot, CheckCircle, AlertCircle, Code } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 const MessageBubble = ({ message, isUser }) => {
-  const { content, tools_used, error } = message;
+  const { content, tools_used, model_info, error } = message;
+
+  // Mostrar información del modelo si existe
+  const renderModelInfo = () => {
+    if (!model_info || !model_info.provider) return null;
+
+    const { provider, model } = model_info;
+    const providerLabel = provider === 'ollama' ? 'Ollama' : 
+                         provider === 'openai' ? 'OpenAI' :
+                         provider === 'huggingface' ? 'Hugging Face' :
+                         provider === 'groq' ? 'Groq' : provider;
+
+    return (
+      <div className="mt-3 pt-3 border-t border-white/10">
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <Code size={14} className="text-blue-400" />
+          <span>Modelo:</span>
+        </div>
+        <div className="flex flex-wrap gap-1 mt-1">
+          <span className="text-xs px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 border border-blue-500/30">
+            {model || 'desconocido'}
+          </span>
+          <span className="text-xs px-2 py-1 bg-gray-500/20 rounded-full text-gray-300 border border-gray-500/30">
+            {providerLabel}
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className={`flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} mb-4 animate-fade-in`}>
@@ -74,6 +102,9 @@ const MessageBubble = ({ message, isUser }) => {
               </div>
             </div>
           )}
+
+          {/* Información del modelo */}
+          {renderModelInfo()}
         </div>
 
         {/* Timestamp */}

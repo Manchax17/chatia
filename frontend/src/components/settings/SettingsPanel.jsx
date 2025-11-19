@@ -6,29 +6,42 @@ import { apiService } from '../../services/apiService';
 const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
   const [apiInfo, setApiInfo] = useState(null);
   const [healthStatus, setHealthStatus] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isOpen) {
-      fetchApiInfo();
-      fetchHealth();
+      fetchData();
     }
   }, [isOpen]);
 
+  const fetchData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchApiInfo(),
+      fetchHealth()
+    ]);
+    setLoading(false);
+  };
+
   const fetchApiInfo = async () => {
     try {
+      console.log('🔍 Fetching API info...');
       const data = await apiService.getRootInfo();
+      console.log('✅ API info received:', data);
       setApiInfo(data);
     } catch (err) {
-      console.error('Error fetching API info:', err);
+      console.error('❌ Error fetching API info:', err);
     }
   };
 
   const fetchHealth = async () => {
     try {
+      console.log('🔍 Fetching health status...');
       const data = await apiService.healthCheck();
+      console.log('✅ Health status received:', data);
       setHealthStatus(data);
     } catch (err) {
-      console.error('Error fetching health:', err);
+      console.error('❌ Error fetching health:', err);
     }
   };
 
@@ -70,7 +83,11 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
                 </div>
               </div>
 
-              {apiInfo && (
+              {loading ? (
+                <div className="text-center py-4 text-gray-400">
+                  Cargando información...
+                </div>
+              ) : apiInfo ? (
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-400">Versión:</span>
@@ -80,24 +97,32 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
                     <span className="text-gray-400">Estado:</span>
                     <span className="text-green-400 font-semibold">{apiInfo.status}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">LLM Provider:</span>
-                    <span className="text-white capitalize">{apiInfo.features?.llm_provider}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Embeddings:</span>
-                    <span className="text-white capitalize">{apiInfo.features?.embedding_provider}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Wearable:</span>
-                    <span className="text-white capitalize">{apiInfo.features?.wearable_connection}</span>
-                  </div>
+                  {apiInfo.features && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">LLM Provider:</span>
+                        <span className="text-white capitalize">{apiInfo.features.llm_provider}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Embeddings:</span>
+                        <span className="text-white capitalize">{apiInfo.features.embedding_provider}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-400">Wearable:</span>
+                        <span className="text-white capitalize">{apiInfo.features.wearable_connection}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-red-400">
+                  Error al cargar información de la API
                 </div>
               )}
             </div>
 
             {/* Health Status */}
-            {healthStatus && (
+            {healthStatus && healthStatus.components && (
               <div className="glass rounded-xl p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <Activity size={24} className="text-blue-500" />
@@ -108,7 +133,7 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
                 </div>
 
                 <div className="space-y-2">
-                  {Object.entries(healthStatus.components || {}).map(([key, value]) => {
+                  {Object.entries(healthStatus.components).map(([key, value]) => {
                     const isHealthy = typeof value === 'object' 
                       ? value.available || value.status === 'ok'
                       : value === 'ok';

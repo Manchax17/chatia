@@ -48,4 +48,8 @@ export const wearableService = {
     const response = await api.get('/api/v1/wearable/connection-info');
     return response.data;
   },
+   async updateManualData(data) {
+    const response = await api.post('/api/v1/wearable/update-manual', data);
+    return response.data;
+  },
 };

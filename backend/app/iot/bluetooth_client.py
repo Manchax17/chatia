@@ -1,13 +1,19 @@
 """Cliente Bluetooth para conexión directa (Linux/Raspberry Pi)"""
 
-from typing import Dict, Optional
+from typing import Dict, Optional, TYPE_CHECKING
 from datetime import datetime
 
-try:
+# Type checking para evitar errores de Pylance
+if TYPE_CHECKING:
     from bleak import BleakClient
-    BLUETOOTH_AVAILABLE = True
-except ImportError:
-    BLUETOOTH_AVAILABLE = False
+else:
+    try:
+        from bleak import BleakClient
+        BLUETOOTH_AVAILABLE = True
+    except ImportError:
+        BLUETOOTH_AVAILABLE = False
+        BleakClient = None  # type: ignore
+        print("⚠️ Bleak no instalado. Bluetooth no disponible.")
 
 from ..config import settings
 
@@ -20,13 +26,15 @@ class XiaomiBluetoothClient:
     
     def __init__(self):
         self.mac_address = settings.xiaomi_mac_address
-        self.client: Optional[BleakClient] = None
+        self.client: Optional['BleakClient'] = None
         self.connected = False
         
+        if not BLUETOOTH_AVAILABLE:
+            print("⚠️ Bluetooth no disponible (bleak no instalado)")
+    
     async def connect(self) -> bool:
         """Conecta al dispositivo via Bluetooth"""
-        if not BLUETOOTH_AVAILABLE:
-            print("⚠️ Bleak no instalado, Bluetooth no disponible")
+        if not BLUETOOTH_AVAILABLE or BleakClient is None:
             return False
         
         if not self.mac_address:
@@ -64,12 +72,17 @@ class XiaomiBluetoothClient:
             battery = await self._read_battery()
             
             return {
-                "steps": 0,  # No disponible via BLE estándar
+                "steps": 0,
                 "calories": 0,
                 "heart_rate": heart_rate,
                 "sleep_hours": 0,
                 "distance_km": 0,
                 "active_minutes": 0,
+                "floors_climbed": 0,
+                "resting_heart_rate": 0,
+                "max_heart_rate": 0,
+                "sleep_quality": "unknown",
+                "stress_level": 0,
                 "battery_level": battery,
                 "last_sync": datetime.now().isoformat(),
                 "device_model": "Xiaomi Band (Bluetooth)",
@@ -84,18 +97,22 @@ class XiaomiBluetoothClient:
     
     async def _read_heart_rate(self) -> int:
         """Lee frecuencia cardíaca"""
+        if not self.client:
+            return 0
         try:
             data = await self.client.read_gatt_char(self.HEART_RATE_UUID)
             return int(data[1]) if len(data) > 1 else 0
-        except:
+        except Exception:
             return 0
     
     async def _read_battery(self) -> int:
         """Lee nivel de batería"""
+        if not self.client:
+            return 0
         try:
             data = await self.client.read_gatt_char(self.BATTERY_UUID)
             return int(data[0]) if len(data) > 0 else 0
-        except:
+        except Exception:
             return 0
     
     async def get_heart_rate_realtime(self) -> Dict:
@@ -108,7 +125,44 @@ class XiaomiBluetoothClient:
         return {
             "heart_rate": hr,
             "timestamp": datetime.now().isoformat(),
-            "quality": "good" if hr > 0 else "poor"
+            "quality": "good" if hr > 0 else "poor",
+            "mock_data": False
+        }
+    
+    async def get_sleep_data(self) -> Dict:
+        """Bluetooth no soporta datos de sueño"""
+        return {
+            "total_sleep_hours": 0,
+            "deep_sleep_hours": 0,
+            "light_sleep_hours": 0,
+            "rem_sleep_hours": 0,
+            "awake_time_hours": 0,
+            "sleep_score": 0,
+            "bedtime": "Unknown",
+            "wake_time": "Unknown",
+            "interruptions": 0,
+            "mock_data": False
+        }
+    
+    async def get_activity_sessions(self) -> list:
+        """Bluetooth no soporta sesiones de actividad"""
+        return []
+    
+    async def sync(self) -> Dict:
+        """Sincroniza via Bluetooth"""
+        if await self.connect():
+            return {
+                "status": "success",
+                "message": "Conectado via Bluetooth",
+                "last_sync": datetime.now().isoformat(),
+                "mock_data": False
+            }
+        return {
+            "status": "failed",
+            "message": "No se pudo conectar via Bluetooth",
+            "last_sync": datetime.now().isoformat(),
+            "mock_data": False
         }
 
+# Instancia global
 bluetooth_client = XiaomiBluetoothClient()

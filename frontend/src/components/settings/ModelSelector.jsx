@@ -5,6 +5,7 @@ import { chatService } from '../../services/chatService';
 const ModelSelector = ({ onModelChange }) => {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedProvider, setSelectedProvider] = useState('ollama');
   const [selectedModel, setSelectedModel] = useState(null);
 
@@ -15,7 +16,12 @@ const ModelSelector = ({ onModelChange }) => {
   const fetchModels = async () => {
     try {
       setLoading(true);
+      setError(null);
+      console.log('🔍 Fetching models...');
+      
       const data = await chatService.getAvailableModels();
+      console.log('✅ Models received:', data);
+      
       setModels(data);
 
       // Seleccionar provider y modelo actual
@@ -25,7 +31,8 @@ const ModelSelector = ({ onModelChange }) => {
         setSelectedModel(currentProvider.current_model);
       }
     } catch (err) {
-      console.error('Error fetching models:', err);
+      console.error('❌ Error fetching models:', err);
+      setError(err.message || 'Error al cargar modelos');
     } finally {
       setLoading(false);
     }
@@ -33,7 +40,7 @@ const ModelSelector = ({ onModelChange }) => {
 
   const handleProviderChange = (provider) => {
     const providerData = models.find(m => m.provider === provider);
-    if (providerData) {
+    if (providerData && providerData.available) {
       setSelectedProvider(provider);
       setSelectedModel(providerData.current_model);
       if (onModelChange) {
@@ -54,6 +61,41 @@ const ModelSelector = ({ onModelChange }) => {
       <div className="glass rounded-xl p-6">
         <div className="flex items-center justify-center py-8">
           <Loader size={24} className="animate-spin text-blue-500" />
+          <span className="ml-3 text-gray-400">Cargando modelos...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="glass rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <AlertCircle size={24} className="text-red-500" />
+          <div>
+            <h3 className="text-lg font-bold text-white">Error</h3>
+            <p className="text-sm text-gray-400">{error}</p>
+          </div>
+        </div>
+        <button
+          onClick={fetchModels}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  if (models.length === 0) {
+    return (
+      <div className="glass rounded-xl p-6">
+        <div className="flex items-center gap-3">
+          <AlertCircle size={24} className="text-yellow-500" />
+          <div>
+            <h3 className="text-lg font-bold text-white">Sin modelos</h3>
+            <p className="text-sm text-gray-400">No se encontraron modelos disponibles</p>
+          </div>
         </div>
       </div>
     );
@@ -106,7 +148,7 @@ const ModelSelector = ({ onModelChange }) => {
       </div>
 
       {/* Model Selector */}
-      {currentProviderData && (
+      {currentProviderData && currentProviderData.models.length > 0 && (
         <div>
           <label className="text-sm text-gray-400 mb-2 block">
             Modelo ({currentProviderData.models.length} disponibles)

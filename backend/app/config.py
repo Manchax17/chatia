@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # ============================================
     # LLM PROVIDER
     # ============================================
-    llm_provider: Literal['openai', 'ollama', 'huggingface'] = 'ollama'
+    llm_provider: Literal['openai', 'ollama', 'huggingface', 'groq'] = 'ollama'
     
     # OpenAI
     openai_api_key: str = ""
@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     huggingface_temperature: float = 0.3
     huggingface_max_length: int = 2048
     
+    # Groq
+    groq_api_key: str = ""
+    groq_model: str = "llama3-8b-8192"
+    groq_temperature: float = 0.3
+
     # ============================================
     # EMBEDDINGS
     # ============================================
@@ -83,29 +88,21 @@ class Settings(BaseSettings):
     # ============================================
     # MODELOS DISPONIBLES
     # ============================================
-    available_ollama_models: List[str] = [
-        "llama3.1:8b",
-        "llama3.1:70b",
-        "mistral:7b",
-        "mistral:latest",
-        "phi3:latest",
-        "gemma2:9b",
-        "qwen2:7b",
-        "codellama:7b"
-    ]
+    available_ollama_models: List[str] = []  # ← Déjalo vacío para obtener dinámicamente desde Ollama
     
-    available_huggingface_models: List[str] = [
-        "meta-llama/Llama-2-7b-chat-hf",
-        "mistralai/Mistral-7B-Instruct-v0.2",
-        "microsoft/phi-2",
-        "google/flan-t5-xl",
-        "HuggingFaceH4/zephyr-7b-beta"
-    ]
+    available_huggingface_models: List[str] = []
     
     available_openai_models: List[str] = [
         "gpt-4-turbo-preview",
         "gpt-4",
         "gpt-3.5-turbo"
+    ]
+
+    available_groq_models: List[str] = [
+    "llama3-8b-8192",
+    "llama3-70b-8192",
+    "mixtral-8x7b-32768",
+    "gemma-7b-it"
     ]
     
     class Config:

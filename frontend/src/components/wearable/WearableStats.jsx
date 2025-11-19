@@ -8,9 +8,11 @@ import {
   Battery,
   RefreshCw,
   AlertCircle,
-  Smartphone
+  Smartphone,
+  Upload
 } from 'lucide-react';
 import StatsCard from './StatsCard';
+import ManualDataForm from './ManualDataForm';
 import { wearableService } from '../../services/wearableService';
 
 const WearableStats = ({ onDataUpdate }) => {
@@ -19,6 +21,7 @@ const WearableStats = ({ onDataUpdate }) => {
   const [error, setError] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [connectionInfo, setConnectionInfo] = useState(null);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -117,14 +120,25 @@ const WearableStats = ({ onDataUpdate }) => {
             </p>
           </div>
 
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="px-3 py-2 glass glass-hover rounded-lg text-gray-300 hover:text-white transition-all disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={`inline mr-1 ${syncing ? 'animate-spin' : ''}`} />
-            Sincronizar
-          </button>
+          {/* Botones de acción */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="px-3 py-2 glass glass-hover rounded-lg text-gray-300 hover:text-white transition-all disabled:opacity-50 text-sm"
+            >
+              <RefreshCw size={16} className={`inline mr-1 ${syncing ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </button>
+
+            <button
+              onClick={() => setShowManualForm(true)}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-all text-sm flex items-center gap-1"
+            >
+              <Upload size={16} />
+              Cargar Datos
+            </button>
+          </div>
         </div>
 
         {/* Connection info */}
@@ -135,6 +149,7 @@ const WearableStats = ({ onDataUpdate }) => {
           <span className="text-gray-400">
             {data?.mock_data ? 'Datos de prueba' : 'Conectado'} • 
             {connectionInfo?.method === 'mock' ? ' Modo simulado' : 
+             connectionInfo?.method === 'manual' ? ' Modo manual' :
              connectionInfo?.method === 'mi_fitness' ? ' Mi Fitness' : 
              connectionInfo?.method === 'bluetooth' ? ' Bluetooth' : 
              ' Desconocido'}
@@ -145,7 +160,15 @@ const WearableStats = ({ onDataUpdate }) => {
         {data?.mock_data && (
           <div className="mt-3 px-3 py-2 bg-yellow-900/30 border border-yellow-700 rounded-lg flex items-center gap-2 text-yellow-200 text-xs">
             <AlertCircle size={14} />
-            <span>Usando datos simulados. Configura tu dispositivo Xiaomi en el backend.</span>
+            <span>Usando datos simulados. Haz clic en "Cargar Datos" para usar información real de Mi Fitness.</span>
+          </div>
+        )}
+
+        {/* Info si es modo manual y no hay datos */}
+        {connectionInfo?.method === 'manual' && (!data || data.steps === 0) && (
+          <div className="mt-3 px-3 py-2 bg-blue-900/30 border border-blue-700 rounded-lg flex items-center gap-2 text-blue-200 text-xs">
+            <AlertCircle size={14} />
+            <span>Modo manual activo. Haz clic en "Cargar Datos" para actualizar con tu información de Mi Fitness.</span>
           </div>
         )}
       </div>
@@ -222,6 +245,14 @@ const WearableStats = ({ onDataUpdate }) => {
           Última sincronización: {data?.last_sync ? new Date(data.last_sync).toLocaleString('es-ES') : 'Nunca'}
         </div>
       </div>
+
+      {/* Modal de carga manual */}
+      {showManualForm && (
+        <ManualDataForm
+          onUpdate={fetchData}
+          onClose={() => setShowManualForm(false)}
+        />
+      )}
     </div>
   );
 };
