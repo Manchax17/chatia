@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { AlertCircle, RefreshCw, Bot } from 'lucide-react';
+import { AlertCircle, RefreshCw, Bot, Cpu, Zap, Brain, Cog } from 'lucide-react';
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
@@ -9,12 +9,39 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showModelSelector, setShowModelSelector] = useState(false);
   const messagesEndRef = useRef(null);
 
   // ✅ Usar settings desde props
   const settings = currentSettings || {
     llmProvider: 'ollama',
-    modelName: 'llama2'
+    modelName: 'gemma3:1b'  // ← Actualizado al modelo por defecto
+  };
+
+  // ✅ Definir modelos disponibles
+  const availableModels = {
+    ollama: [
+      { value: 'gemma3:1b', label: 'Gemma3 1B' },
+      { value: 'llama3.1:8b', label: 'Llama3.1 8B' },
+      { value: 'mistral:7b', label: 'Mistral 7B' },
+      { value: 'phi3:3.8b', label: 'Phi3 3.8B' }
+    ],
+    groq: [
+      { value: 'llama3-70b-8192', label: 'Llama3 70B' },
+      { value: 'llama3-8b-8192', label: 'Llama3 8B' },
+      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile' },
+      { value: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+      { value: 'gemma-7b-it', label: 'Gemma 7B' }
+    ],
+    openai: [
+      { value: 'gpt-4-turbo-preview', label: 'GPT-4 Turbo' },
+      { value: 'gpt-4', label: 'GPT-4' },
+      { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
+    ],
+    huggingface: [
+      { value: 'meta-llama/Llama-2-7b-chat-hf', label: 'Llama 2 7B' },
+      { value: 'microsoft/DialoGPT-medium', label: 'DialoGPT Medium' }
+    ]
   };
 
   const scrollToBottom = () => {
@@ -94,16 +121,40 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
     }
   };
 
+  const handleModelChange = (provider, model) => {
+    const newSettings = {
+      llmProvider: provider,
+      modelName: model
+    };
+    onSettingsChange(newSettings);
+    setShowModelSelector(false);
+  };
+
+  const getProviderIcon = (provider) => {
+    switch (provider) {
+      case 'ollama': return <Cpu size={14} />;
+      case 'groq': return <Zap size={14} />;
+      case 'openai': return <Brain size={14} />;
+      case 'huggingface': return <Cog size={14} />;
+      default: return <Cpu size={14} />;
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-gray-800 bg-gray-900/50 backdrop-blur-xl">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
             <h2 className="text-xl font-bold text-white">Chat con CHATFIT AI</h2>
-            <p className="text-sm text-gray-400">
-              {settings.modelName} ({settings.llmProvider})
-            </p>
+            <button
+              onClick={() => setShowModelSelector(!showModelSelector)}
+              className="px-3 py-1 text-xs glass glass-hover rounded-lg flex items-center gap-2 transition-all hover:bg-gray-800/50"
+            >
+              {getProviderIcon(settings.llmProvider)}
+              <span className="text-gray-300">{settings.modelName}</span>
+              <span className="text-gray-500 text-xs">({settings.llmProvider})</span>
+            </button>
           </div>
           
           {messages.length > 0 && (
@@ -116,6 +167,35 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
             </button>
           )}
         </div>
+
+        {/* Selector de modelo */}
+        {showModelSelector && (
+          <div className="mt-3 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(availableModels).map(([provider, models]) => (
+                <div key={provider} className="space-y-1">
+                  <div className="text-xs text-gray-400 font-semibold flex items-center gap-1">
+                    {getProviderIcon(provider)}
+                    {provider.toUpperCase()}
+                  </div>
+                  {models.map((model) => (
+                    <button
+                      key={model.value}
+                      onClick={() => handleModelChange(provider, model.value)}
+                      className={`w-full text-xs px-2 py-1 rounded text-left transition-all ${
+                        settings.llmProvider === provider && settings.modelName === model.value
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700'
+                      }`}
+                    >
+                      {model.label}
+                    </button>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="mt-3 px-4 py-2 bg-red-900/30 border border-red-700 rounded-lg flex items-center gap-2 text-red-200">

@@ -7,18 +7,19 @@ import SettingsPanel from './components/settings/SettingsPanel';
 // ✅ Añadido: Servicio para manejar la configuración
 const SETTINGS_KEY = 'chatfit_settings';
 
+// Si se usa OLLAMA.
 const getSettings = () => {
   try {
     const settings = localStorage.getItem(SETTINGS_KEY);
     return settings ? JSON.parse(settings) : {
       llmProvider: 'ollama',
-      modelName: 'llama2'
+      modelName: 'gemma3:1b'  // ← Cambiado a tu modelo Ollama por defecto
     };
   } catch (error) {
     console.warn('Error loading settings from localStorage:', error);
     return {
       llmProvider: 'ollama',
-      modelName: 'llama2'
+      modelName: 'gemma3:1b'
     };
   }
 };

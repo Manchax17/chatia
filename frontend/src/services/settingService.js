@@ -1,30 +1,41 @@
-// Servicio para manejar la configuración del usuario
-const SETTINGS_KEY = 'chatfit_settings';
+import api from './api';
 
-export const getSettings = () => {
-  try {
-    const settings = localStorage.getItem(SETTINGS_KEY);
-    return settings ? JSON.parse(settings) : {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  } catch (error) {
-    console.warn('Error loading settings from localStorage:', error);
-    return {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  }
-};
+export const chatService = {
+  /**
+   * Envía mensaje al chat
+   */
+  async sendMessage(message, chatHistory = [], options = {}) {
+    const { includeWearable = true, llmProvider, modelName } = options;
+    
+    console.log('🚀 Enviando mensaje con configuración:', {
+      llmProvider,
+      modelName,
+      includeWearable
+    });
 
-export const updateSettings = (newSettings) => {
-  try {
-    const currentSettings = getSettings();
-    const updatedSettings = { ...currentSettings, ...newSettings };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
-    return updatedSettings;
-  } catch (error) {
-    console.warn('Error saving settings to localStorage:', error);
-    return newSettings;
-  }
+    const response = await api.post('/api/v1/chat/', {
+      message,
+      chat_history: chatHistory,
+      include_wearable: includeWearable,
+      llm_provider: llmProvider,
+      model_name: modelName,
+    });
+    return response.data;
+  },
+
+  /**
+   * Obtiene modelos disponibles
+   */
+  async getAvailableModels() {
+    const response = await api.get('/api/v1/chat/models');
+    return response.data;
+  },
+
+  /**
+   * Limpia cache del wearable
+   */
+  async clearCache() {
+    const response = await api.post('/api/v1/chat/clear-cache');
+    return response.data;
+  },
 };
