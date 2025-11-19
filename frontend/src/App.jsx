@@ -1,21 +1,75 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Github, Heart } from 'lucide-react';
 import ChatInterface from './components/chat/ChatInterface';
 import WearableStats from './components/wearable/WearableStats';
 import SettingsPanel from './components/settings/SettingsPanel';
 
+// ✅ Añadido: Servicio para manejar la configuración
+const SETTINGS_KEY = 'chatfit_settings';
+
+const getSettings = () => {
+  try {
+    const settings = localStorage.getItem(SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : {
+      llmProvider: 'ollama',
+      modelName: 'llama2'
+    };
+  } catch (error) {
+    console.warn('Error loading settings from localStorage:', error);
+    return {
+      llmProvider: 'ollama',
+      modelName: 'llama2'
+    };
+  }
+};
+
 function App() {
   const [wearableData, setWearableData] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [modelConfig, setModelConfig] = useState(null);
+  
+  // ✅ CAMBIO IMPORTANTE: Estado centralizado para la configuración
+  const [appSettings, setAppSettings] = useState(getSettings);
+
+  // ✅ Cargar configuración al iniciar
+  useEffect(() => {
+    const loadSettings = () => {
+      const settings = getSettings();
+      setAppSettings(settings);
+    };
+    
+    loadSettings();
+    
+    // ✅ Escuchar cambios en localStorage desde otras pestañas
+    const handleStorageChange = (e) => {
+      if (e.key === SETTINGS_KEY) {
+        try {
+          const newSettings = JSON.parse(e.newValue);
+          setAppSettings(newSettings);
+        } catch (error) {
+          console.warn('Error parsing settings from storage:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // ✅ Función para actualizar configuración
+  const handleSettingsChange = (newSettings) => {
+    try {
+      // Actualizar localStorage
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
+      // Actualizar estado
+      setAppSettings(newSettings);
+      console.log('✅ Configuración actualizada:', newSettings);
+    } catch (error) {
+      console.error('❌ Error actualizando configuración:', error);
+    }
+  };
 
   const handleWearableDataUpdate = (data) => {
     setWearableData(data);
-  };
-
-  const handleModelChange = (provider, model) => {
-    setModelConfig({ provider, model });
-    console.log('Model changed:', provider, model);
   };
 
   return (
@@ -32,14 +86,15 @@ function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">CHATFIT AI</h1>
-              <p className="text-xs text-gray-400">Tu asistente personal de fitness</p>
+              <p className="text-xs text-gray-400">
+                {appSettings.modelName} ({appSettings.llmProvider})
+              </p>
             </div>
           </div>
 
           {/* Actions */}
           <div className="flex items-center gap-3">
 
-            {/* FIX: Venía roto este <a> */}
             <a
               href="https://github.com"
               target="_blank"
@@ -73,7 +128,11 @@ function App() {
 
           {/* Chat Area */}
           <section className="flex-1 overflow-hidden">
-            <ChatInterface wearableData={wearableData} modelConfig={modelConfig} />
+            <ChatInterface 
+              wearableData={wearableData} 
+              currentSettings={appSettings}
+              onSettingsChange={handleSettingsChange}
+            />
           </section>
 
         </div>
@@ -83,7 +142,7 @@ function App() {
       <SettingsPanel
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        onModelChange={handleModelChange}
+        onModelChange={handleSettingsChange}  // ✅ Pasar la función actualizada
       />
 
       {/* Background Effects */}

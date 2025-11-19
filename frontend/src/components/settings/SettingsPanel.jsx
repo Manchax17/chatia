@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, X, Info, Server, Activity } from 'lucide-react';
+import { Settings, X, Info, Server, Activity, CheckCircle } from 'lucide-react';
 import ModelSelector from './ModelSelector';
 import { apiService } from '../../services/apiService';
 
@@ -11,13 +11,13 @@ const getSettings = () => {
     const settings = localStorage.getItem(SETTINGS_KEY);
     return settings ? JSON.parse(settings) : {
       llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
+      modelName: 'llama2'
     };
   } catch (error) {
     console.warn('Error loading settings from localStorage:', error);
     return {
       llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
+      modelName: 'llama2'
     };
   }
 };
@@ -38,13 +38,16 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
   const [apiInfo, setApiInfo] = useState(null);
   const [healthStatus, setHealthStatus] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentSettings, setCurrentSettings] = useState(getSettings); // ✅ Estado para la configuración actual
+  const [currentSettings, setCurrentSettings] = useState(getSettings);
+  const [pendingSettings, setPendingSettings] = useState(getSettings); // ✅ Nuevo estado para cambios pendientes
+  const [saveStatus, setSaveStatus] = useState(null); // ✅ Estado para mostrar resultado
 
   useEffect(() => {
     if (isOpen) {
       fetchData();
-      // ✅ Cargar configuración actual
       setCurrentSettings(getSettings());
+      setPendingSettings(getSettings()); // ✅ Inicializar con configuración actual
+      setSaveStatus(null); // ✅ Resetear estado al abrir
     }
   }, [isOpen]);
 
@@ -79,17 +82,64 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
     }
   };
 
-  // ✅ Nueva función para manejar el cambio de modelo
-  const handleModelChange = (provider, model) => {
-    const newSettings = { llmProvider: provider, modelName: model };
-    const updatedSettings = updateSettings(newSettings);
-    setCurrentSettings(updatedSettings);
-    
-    // ✅ Notificar al componente padre (App.jsx probablemente)
-    if (onModelChange) {
-      onModelChange(newSettings);
+  // ✅ Nueva función para manejar cambios pendientes (sin aplicar todavía)
+  const handlePendingModelChange = (provider, model) => {
+    const newPendingSettings = { llmProvider: provider, modelName: model };
+    setPendingSettings(newPendingSettings);
+    setSaveStatus(null); // Resetear estado al hacer nuevos cambios
+  };
+
+  // ✅ NUEVA FUNCIÓN: Aplicar cambios y guardar
+  const handleApplyChanges = async () => {
+    try {
+      setSaveStatus('saving');
+      
+      // Actualizar configuración en localStorage
+      const updatedSettings = updateSettings(pendingSettings);
+      setCurrentSettings(updatedSettings);
+      
+      // Notificar al componente padre
+      if (onModelChange) {
+        onModelChange(pendingSettings);
+      }
+
+      // ✅ Forzar una actualización enviando un mensaje de prueba al backend
+      // Esto asegura que el backend reciba la nueva configuración
+      try {
+        await fetch('http://localhost:8000/api/v1/chat/', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: "ping", // Mensaje de prueba
+            chat_history: [],
+            include_wearable: false,
+            llm_provider: pendingSettings.llmProvider,
+            model_name: pendingSettings.modelName
+          })
+        });
+      } catch (testError) {
+        console.log('⚠️ Test message failed, but settings are saved');
+      }
+
+      setSaveStatus('success');
+      
+      // Auto-cerrar el mensaje de éxito después de 2 segundos
+      setTimeout(() => {
+        setSaveStatus(null);
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Error applying settings:', error);
+      setSaveStatus('error');
     }
   };
+
+  // ✅ Verificar si hay cambios pendientes
+  const hasPendingChanges = 
+    pendingSettings.llmProvider !== currentSettings.llmProvider ||
+    pendingSettings.modelName !== currentSettings.modelName;
 
   if (!isOpen) return null;
 
@@ -118,24 +168,88 @@ const SettingsPanel = ({ isOpen, onClose, onModelChange }) => {
           <div className="space-y-6">
             {/* Model Selector */}
             <ModelSelector 
-              onModelChange={handleModelChange} // ✅ Pasar la nueva función
-              currentSettings={currentSettings} // ✅ Pasar configuración actual
+              onModelChange={handlePendingModelChange} // ✅ Usar la función de cambios pendientes
+              currentSettings={pendingSettings} // ✅ Usar configuración pendiente
             />
 
-            {/* Current Model Display */}
+            {/* Current vs Pending Settings Display */}
             <div className="glass rounded-xl p-4 border border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-300 mb-2">Modelo actual:</h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 border border-blue-500/30">
-                  {currentSettings.modelName}
-                </span>
-                <span className="text-xs px-2 py-1 bg-gray-500/20 rounded-full text-gray-300 border border-gray-500/30">
-                  {currentSettings.llmProvider}
-                </span>
+              <div className="flex justify-between items-start mb-3">
+                <h3 className="text-sm font-semibold text-gray-300">Configuración:</h3>
+                {hasPendingChanges && (
+                  <span className="text-xs px-2 py-1 bg-yellow-500/20 rounded-full text-yellow-300 border border-yellow-500/30">
+                    Cambios pendientes
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                Los cambios se aplican a la siguiente conversación
-              </p>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <div className="text-gray-400 mb-1">Actual:</div>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-xs px-2 py-1 bg-blue-500/20 rounded-full text-blue-300 border border-blue-500/30">
+                      {currentSettings.modelName}
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-gray-500/20 rounded-full text-gray-300 border border-gray-500/30">
+                      {currentSettings.llmProvider}
+                    </span>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="text-gray-400 mb-1">Seleccionado:</div>
+                  <div className="flex flex-wrap gap-1">
+                    <span className="text-xs px-2 py-1 bg-green-500/20 rounded-full text-green-300 border border-green-500/30">
+                      {pendingSettings.modelName}
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-gray-500/20 rounded-full text-gray-300 border border-gray-500/30">
+                      {pendingSettings.llmProvider}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ✅ Botón Aplicar Cambios */}
+              {hasPendingChanges && (
+                <div className="mt-4 pt-3 border-t border-gray-600">
+                  <button
+                    onClick={handleApplyChanges}
+                    disabled={saveStatus === 'saving'}
+                    className={`w-full py-2 px-4 rounded-lg font-semibold transition-all ${
+                      saveStatus === 'saving' 
+                        ? 'bg-gray-600 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    } text-white flex items-center justify-center gap-2`}
+                  >
+                    {saveStatus === 'saving' ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Aplicando...
+                      </>
+                    ) : saveStatus === 'success' ? (
+                      <>
+                        <CheckCircle size={16} />
+                        ¡Aplicado!
+                      </>
+                    ) : (
+                      '✅ Aplicar Cambios'
+                    )}
+                  </button>
+                  
+                  {saveStatus === 'error' && (
+                    <div className="mt-2 text-xs text-red-400 text-center">
+                      Error al aplicar cambios. Intenta nuevamente.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!hasPendingChanges && saveStatus === 'success' && (
+                <div className="mt-3 text-xs text-green-400 text-center">
+                  <CheckCircle size={14} className="inline mr-1" />
+                  Configuración aplicada correctamente
+                </div>
+              )}
             </div>
 
             {/* API Status */}

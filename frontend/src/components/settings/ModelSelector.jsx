@@ -2,44 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Cpu, Check, AlertCircle, Loader } from 'lucide-react';
 import { chatService } from '../../services/chatService';
 
-// ✅ Añadido: Servicio para manejar la configuración
-const SETTINGS_KEY = 'chatfit_settings';
-
-const getSettings = () => {
-  try {
-    const settings = localStorage.getItem(SETTINGS_KEY);
-    return settings ? JSON.parse(settings) : {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  } catch (error) {
-    console.warn('Error loading settings from localStorage:', error);
-    return {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  }
-};
-
-const updateSettings = (newSettings) => {
-  try {
-    const currentSettings = getSettings();
-    const updatedSettings = { ...currentSettings, ...newSettings };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
-    return updatedSettings;
-  } catch (error) {
-    console.warn('Error saving settings to localStorage:', error);
-    return newSettings;
-  }
-};
-
 const ModelSelector = ({ onModelChange, currentSettings }) => {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // ✅ Usar la configuración actual como estado inicial
   const [selectedProvider, setSelectedProvider] = useState(currentSettings?.llmProvider || 'ollama');
-  const [selectedModel, setSelectedModel] = useState(currentSettings?.modelName || 'gemma3:1b');
+  const [selectedModel, setSelectedModel] = useState(currentSettings?.modelName || 'llama2');
 
   useEffect(() => {
     fetchModels();
@@ -63,15 +31,6 @@ const ModelSelector = ({ onModelChange, currentSettings }) => {
       console.log('✅ Models received:', data);
       
       setModels(data);
-
-      // ✅ Si no hay configuración actual, usar la del backend
-      if (!currentSettings) {
-        const currentProvider = data.find(p => p.available);
-        if (currentProvider) {
-          setSelectedProvider(currentProvider.provider);
-          setSelectedModel(currentProvider.current_model);
-        }
-      }
     } catch (err) {
       console.error('❌ Error fetching models:', err);
       setError(err.message || 'Error al cargar modelos');
@@ -88,9 +47,7 @@ const ModelSelector = ({ onModelChange, currentSettings }) => {
       const modelToSelect = providerData.current_model || providerData.models[0];
       setSelectedModel(modelToSelect);
       
-      // ✅ Actualizar configuración y notificar
-      const newSettings = { llmProvider: provider, modelName: modelToSelect };
-      updateSettings(newSettings);
+      // ✅ Notificar cambio inmediatamente al padre
       if (onModelChange) {
         onModelChange(provider, modelToSelect);
       }
@@ -100,9 +57,7 @@ const ModelSelector = ({ onModelChange, currentSettings }) => {
   const handleModelChange = (model) => {
     setSelectedModel(model);
     
-    // ✅ Actualizar configuración y notificar
-    const newSettings = { llmProvider: selectedProvider, modelName: model };
-    updateSettings(newSettings);
+    // ✅ Notificar cambio inmediatamente al padre
     if (onModelChange) {
       onModelChange(selectedProvider, model);
     }
@@ -233,7 +188,7 @@ const ModelSelector = ({ onModelChange, currentSettings }) => {
 
       {/* Info */}
       <div className="mt-4 px-3 py-2 bg-blue-900/20 border border-blue-700/50 rounded-lg text-xs text-blue-200">
-        <strong>Nota:</strong> Cambiar el modelo afectará la siguiente conversación. Los cambios se aplican por sesión.
+        <strong>Nota:</strong> Los cambios se aplicarán cuando presiones "Aplicar Cambios".
       </div>
     </div>
   );

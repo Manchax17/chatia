@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     
     # Groq
     groq_api_key: str = ""
-    groq_model: str = "llama3-8b-8192"
+    groq_model: str = "llama3-70b-8192"
     groq_temperature: float = 0.3
 
     # ============================================

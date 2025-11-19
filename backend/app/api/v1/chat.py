@@ -28,19 +28,33 @@ async def chat(request: ChatRequest, request_obj: Request):
     - Retorna respuesta enriquecida
     """
     try:
-        # Obtener ID de sesión (puedes usar IP o un token si lo tienes)
         session_id = request_obj.client.host if request_obj.client else "default"
         
-        # Si se especifica un proveedor o modelo, actualizar la sesión
-        llm_provider = request.llm_provider or _session_models.get(session_id, {}).get("provider", "ollama")
-        model_name = request.model_name or _session_models.get(session_id, {}).get("model", "gemma3:1b")
+        # ✅ CORREGIDO: Usar configuración real en lugar de valores hardcodeados
+        from ...config import settings
+        
+        # Determinar proveedor y modelo
+        llm_provider = request.llm_provider or _session_models.get(session_id, {}).get("provider", settings.llm_provider)
+        
+        # Obtener modelo por defecto del proveedor seleccionado
+        default_model = getattr(settings, f"{llm_provider}_model", "")
+        model_name = request.model_name or _session_models.get(session_id, {}).get("model", default_model)
+        
+        # ✅ AGREGAR: Logs de depuración
+        print(f"🔧 PARÁMETROS RECIBIDOS:")
+        print(f"   - llm_provider: {request.llm_provider}")
+        print(f"   - model_name: {request.model_name}")
+        print(f"   - message: {request.message[:50]}...")
+        print(f"🔧 CONFIGURACIÓN FINAL:")
+        print(f"   - llm_provider: {llm_provider}")
+        print(f"   - model_name: {model_name}")
         
         # Guardar en caché de sesión
         _session_models[session_id] = {
             "provider": llm_provider,
             "model": model_name
         }
-        
+
         # Obtener datos del wearable si se solicita
         wearable_data = None
         if request.include_wearable:
@@ -104,51 +118,38 @@ async def list_available_models():
         
         response = []
         
-        for provider, models in available_models.items():
+        for provider in ['ollama', 'groq', 'openai', 'huggingface']:
             is_available = LLMFactory.validate_provider(provider)
+            models_list = available_models.get(provider, [])
             
-            # Asegurar que current_model sea siempre una cadena
+            # Obtener modelo actual del proveedor
             current_model = ""
             if provider == 'ollama':
-                current_model = settings.ollama_model or ""
-            elif provider == 'huggingface':
-                current_model = settings.huggingface_model or ""
+                current_model = settings.ollama_model
+            elif provider == 'groq':
+                current_model = settings.groq_model
             elif provider == 'openai':
-                current_model = settings.openai_model or ""
-            elif provider == 'groq':  # Si agregaste Groq
-                current_model = settings.groq_model or ""
+                current_model = settings.openai_model
+            elif provider == 'huggingface':
+                current_model = settings.huggingface_model
             
-            # Asegurar que models sea siempre una lista de cadenas
-            if not isinstance(models, list):
-                models = []
+            # Filtrar modelos válidos
+            filtered_models = [model for model in models_list if isinstance(model, str) and model.strip()]
             
-            # Filtrar solo cadenas válidas
-            filtered_models = []
-            for model in models:
-                if isinstance(model, str) and model.strip():
-                    filtered_models.append(model)
-            
-            # Crear respuesta segura
-            model_list_response = {
+            response.append({
                 "provider": provider,
                 "models": filtered_models,
                 "current_model": current_model,
                 "available": is_available
-            }
-            
-            response.append(model_list_response)
+            })
         
         return response
         
     except Exception as e:
         import traceback
         traceback.print_exc()
-        
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error listando modelos: {str(e)}"
-        )
-
+        raise HTTPException(status_code=500, detail=f"Error listando modelos: {str(e)}")
+    
 @router.post("/clear-cache")
 async def clear_wearable_cache():
     """

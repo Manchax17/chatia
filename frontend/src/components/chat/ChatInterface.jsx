@@ -5,62 +5,17 @@ import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
 import { chatService } from '../../services/chatService';
 
-// ✅ Añadido: Servicio para manejar la configuración
-const SETTINGS_KEY = 'chatfit_settings';
-
-const getSettings = () => {
-  try {
-    const settings = localStorage.getItem(SETTINGS_KEY);
-    return settings ? JSON.parse(settings) : {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  } catch (error) {
-    console.warn('Error loading settings from localStorage:', error);
-    return {
-      llmProvider: 'ollama',
-      modelName: 'gemma3:1b'
-    };
-  }
-};
-
-const updateSettings = (newSettings) => {
-  try {
-    const currentSettings = getSettings();
-    const updatedSettings = { ...currentSettings, ...newSettings };
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
-    return updatedSettings;
-  } catch (error) {
-    console.warn('Error saving settings to localStorage:', error);
-    return newSettings;
-  }
-};
-
-const ChatInterface = ({ wearableData }) => {
+const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentSettings, setCurrentSettings] = useState({
-    llmProvider: 'ollama',
-    modelName: 'gemma3:1b'
-  });
   const messagesEndRef = useRef(null);
 
-  // ✅ Cargar configuración al iniciar
-  useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const settings = await getSettings();
-        setCurrentSettings({
-          llmProvider: settings.llmProvider || 'ollama',
-          modelName: settings.modelName || 'gemma3:1b'
-        });
-      } catch (err) {
-        console.warn('No se pudo cargar configuración, usando valores por defecto');
-      }
-    };
-    loadSettings();
-  }, []);
+  // ✅ Usar settings desde props
+  const settings = currentSettings || {
+    llmProvider: 'ollama',
+    modelName: 'llama2'
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,14 +44,19 @@ const ChatInterface = ({ wearableData }) => {
         content: msg.content
       }));
 
-      // ✅ ¡Ahora enviamos el proveedor y modelo seleccionado!
+      console.log('🚀 Enviando mensaje con configuración:', {
+        provider: settings.llmProvider,
+        model: settings.modelName
+      });
+
+      // ✅ Usar la configuración actual del padre (App)
       const response = await chatService.sendMessage(
         messageText,
         chatHistory,
         { 
           includeWearable: true,
-          llmProvider: currentSettings.llmProvider,
-          modelName: currentSettings.modelName
+          llmProvider: settings.llmProvider,
+          modelName: settings.modelName
         }
       );
 
@@ -142,7 +102,7 @@ const ChatInterface = ({ wearableData }) => {
           <div>
             <h2 className="text-xl font-bold text-white">Chat con CHATFIT AI</h2>
             <p className="text-sm text-gray-400">
-              {currentSettings.modelName} ({currentSettings.llmProvider})
+              {settings.modelName} ({settings.llmProvider})
             </p>
           </div>
           

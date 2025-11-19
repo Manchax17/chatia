@@ -4,6 +4,7 @@ from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.prompts import PromptTemplate
 from typing import Optional, List, Dict
 import traceback
+from datetime import datetime
 
 from .tools import get_tools
 from .llm_factory import LLMFactory
@@ -103,7 +104,7 @@ Question: {input}
                     for tool in self.tools
                 ]) if self.tools else "No tools available",
                 "tool_names": ", ".join([tool.name for tool in self.tools]) if self.tools else "",
-                "full_context": full_context  # ✅ esto sí
+                "full_context": full_context
             }
         )
         
@@ -176,12 +177,22 @@ Question: {input}
             dict con respuesta, tools usadas y metadata
         """
         try:
+            # ✅ AGREGAR: Información detallada del modelo
+            model_info = {
+                "provider": self.llm_provider,
+                "model": self.model_name or getattr(settings, f"{self.llm_provider}_model", "unknown"),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            print(f"🔧 Modelo activo: {model_info}")
+            
             # Verificar si tenemos LLM disponible
             if not self.llm:
                 return {
                     "response": "Lo siento, el sistema de IA no está disponible en este momento. Por favor verifica la configuración.",
                     "error": "LLM no disponible",
-                    "success": False
+                    "success": False,
+                    "model_info": model_info
                 }
             
             # Construir input con historial si existe
@@ -189,7 +200,7 @@ Question: {input}
             if chat_history and len(chat_history) > 0:
                 history_text = "\n".join([
                     f"{'Usuario' if msg['role'] == 'user' else 'Asistente'}: {msg['content']}"
-                    for msg in chat_history[-6:]  # Últimos 6 mensajes (3 pares)
+                    for msg in chat_history[-6:]
                 ])
                 full_input = f"HISTORIAL RECIENTE:\n{history_text}\n\nPREGUNTA ACTUAL: {message}"
             
@@ -214,10 +225,7 @@ Question: {input}
                 return {
                     "response": response["output"],
                     "tools_used": tools_used,
-                    "model_info": {
-                        "provider": self.llm_provider,
-                        "model": self.model_name or "default"
-                    },
+                    "model_info": model_info,
                     "wearable_data_used": bool(self.wearable_data),
                     "success": True
                 }
@@ -247,10 +255,7 @@ Question: {input}
                 return {
                     "response": response_text,
                     "tools_used": [],
-                    "model_info": {
-                        "provider": self.llm_provider,
-                        "model": self.model_name or "default"
-                    },
+                    "model_info": model_info,
                     "wearable_data_used": bool(self.wearable_data),
                     "success": True
                 }
@@ -262,11 +267,11 @@ Question: {input}
             return {
                 "response": "Lo siento, hubo un error al procesar tu mensaje. Por favor intenta de nuevo o reformula tu pregunta.",
                 "error": str(e),
-                "success": False
+                "success": False,
+                "model_info": model_info
             }
     
     def update_wearable_data(self, new_data: dict):
         """Actualiza datos del wearable y recrea el agente"""
         self.wearable_data = new_data
-        # No recrear el agente aquí para evitar problemas
         print("✅ Datos del wearable actualizados")
