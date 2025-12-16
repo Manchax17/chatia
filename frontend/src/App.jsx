@@ -3,7 +3,9 @@ import { Settings, Github, Heart } from 'lucide-react';
 import ChatInterface from './components/chat/ChatInterface';
 import WearableStats from './components/wearable/WearableStats';
 import SettingsPanel from './components/settings/SettingsPanel';
+import ChatHistory from './components/chat/ChatHistory';
 import { WearableProvider } from './WearableContext';
+import { ChatsProvider } from './ChatsContext';
 
 // ✅ Añadido: Servicio para manejar la configuración
 const SETTINGS_KEY = 'chatfit_settings';
@@ -76,7 +78,8 @@ function App() {
 
   return (
     <WearableProvider>
-      <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+      <ChatsProvider>
+        <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
         
         {/* Header */}
         <header className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-xl border-b border-gray-800">
@@ -124,6 +127,11 @@ function App() {
         <main className="pt-[73px] h-full">
           <div className="h-full flex">
             
+            {/* Chat History Sidebar */}
+            <aside className="w-72 border-r border-gray-800 bg-gray-900/50 backdrop-blur-xl overflow-hidden flex-shrink-0">
+              <ChatHistory />
+            </aside>
+
             {/* Wearable Sidebar */}
             <aside className="w-80 border-r border-gray-800 bg-gray-900/50 backdrop-blur-xl overflow-hidden flex-shrink-0">
               <WearableStats />
@@ -152,7 +160,8 @@ function App() {
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
         </div>
-      </div>
+        </div>
+      </ChatsProvider>
     </WearableProvider>
   );
 }

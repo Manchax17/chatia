@@ -5,15 +5,21 @@ export const chatService = {
    * Envía mensaje al chat
    */
   async sendMessage(message, chatHistory = [], options = {}) {
-    const { includeWearable = true, llmProvider, modelName } = options;
+    const { includeWearable = true, llmProvider, modelName, chat_id } = options;
     
     console.log('🚀 Enviando mensaje con configuración:', {
       llmProvider,
       modelName,
-      includeWearable
+      includeWearable,
+      chat_id
     });
 
-    const response = await api.post('/api/v1/chat/', {
+    const params = new URLSearchParams();
+    if (chat_id) {
+      params.append('chat_id', chat_id);
+    }
+
+    const response = await api.post(`/api/v1/chat/?${params.toString()}`, {
       message,
       chat_history: chatHistory,
       include_wearable: includeWearable,

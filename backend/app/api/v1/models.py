@@ -30,6 +30,7 @@ class WearableDataResponse(BaseModel):
     data: Dict = Field(..., description="Datos del dispositivo")
     success: bool = Field(..., description="Si la operación fue exitosa")
     error: Optional[str] = Field(default=None, description="Mensaje de error si hubo")
+    message: Optional[str] = Field(default=None, description="Mensaje informativo")
 
 class SyncResponse(BaseModel):
     """Response de sincronización"""

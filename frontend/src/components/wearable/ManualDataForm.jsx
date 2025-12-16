@@ -34,6 +34,13 @@ const ManualDataForm = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validar que los campos requeridos tengan valores
+    if (!formData.steps || !formData.calories || !formData.heart_rate || !formData.sleep_hours) {
+      setError('❌ Por favor completa todos los campos requeridos (marcados con *)');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
@@ -55,20 +62,45 @@ const ManualDataForm = ({ onClose }) => {
         device_model: formData.device_model || 'Xiaomi Mi Band'
       };
 
+      console.log('📤 Enviando datos:', dataToSend);
       const response = await wearableService.updateManualData(dataToSend);
       
+      console.log('📥 Respuesta:', response);
+      
       if (response.success) {
-        alert('✅ Datos actualizados correctamente');
+        setError(null); // Limpiar errores
         
         // Actualizar el estado global
-        setWearableData(response.data);
+        if (response.data) {
+          setWearableData(response.data);
+        }
         
+        // Mostrar mensaje de éxito
+        alert('✅ Datos actualizados correctamente\n\n' + 
+              (response.message || 'Los datos se han guardado y están listos para usar.'));
+        
+        // Cerrar el formulario
         if (onClose) onClose();
+      } else {
+        // Respuesta no exitosa
+        const errorMsg = response.error || 'No se pudieron actualizar los datos';
+        setError('❌ ' + errorMsg);
       }
     } catch (err) {
-      const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
-      setError(errorMsg);
-      console.error('Error updating data:', err);
+      console.error('❌ Error completo:', err);
+      
+      // Mejorar extracción del mensaje de error
+      let errorMsg = 'Error desconocido al actualizar los datos';
+      
+      if (err.response?.data?.detail) {
+        errorMsg = err.response.data.detail;
+      } else if (err.response?.data?.error) {
+        errorMsg = err.response.data.error;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+      
+      setError('❌ ' + errorMsg);
     } finally {
       setLoading(false);
     }
@@ -276,36 +308,36 @@ const ManualDataForm = ({ onClose }) => {
             <strong>💡 Tip:</strong> Abre la app <strong>Mi Fitness</strong> en tu teléfono y copia los valores que aparecen ahí.
             Los campos marcados con * son obligatorios.
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-gray-800 bg-gray-900/50">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={loading}
-            className="flex-1 px-4 py-2 glass rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <Loader size={16} className="animate-spin" />
-                Actualizando...
-              </>
-            ) : (
-              <>
-                <Check size={16} />
-                Actualizar
-              </>
-            )}
-          </button>
-        </div>
+          {/* Footer - DENTRO DEL FORM */}
+          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-700">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              className="flex-1 px-4 py-2 glass rounded-lg hover:bg-white/10 transition-colors disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <Loader size={16} className="animate-spin" />
+                  Actualizando...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Actualizar
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

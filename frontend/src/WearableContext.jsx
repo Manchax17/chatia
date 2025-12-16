@@ -1,5 +1,6 @@
 // src/context/WearableContext.jsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { wearableService } from './services/wearableService';
 
 const WearableContext = createContext();
 
@@ -11,6 +12,7 @@ export const WearableProvider = ({ children }) => {
   // Función para actualizar los datos del wearable
   const updateWearableData = (newData) => {
     setWearableData(newData);
+    setError(null);
   };
 
   // Función para recargar los datos desde el backend
@@ -19,13 +21,13 @@ export const WearableProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Aquí deberías llamar a tu servicio para obtener los datos más recientes
-      // Por ahora, solo actualizamos el estado con los datos que recibimos
-      // En una implementación real, esto debería hacer una llamada a la API
-      // const response = await wearableService.getLatestData();
-      // if (response.success) {
-      //   setWearableData(response.data);
-      // }
+      const response = await wearableService.getLatestData();
+      if (response && response.success) {
+        setWearableData(response.data);
+        setError(null);
+      } else {
+        setError('No se pudieron cargar los datos del wearable');
+      }
     } catch (err) {
       console.error('Error refreshing wearable data:', err);
       setError('Error al obtener datos del wearable');
@@ -34,13 +36,19 @@ export const WearableProvider = ({ children }) => {
     }
   };
 
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    refreshWearableData();
+  }, []);
+
   return (
     <WearableContext.Provider value={{
       wearableData,
       setWearableData: updateWearableData,
       refreshWearableData,
       loading,
-      error
+      error,
+      setError
     }}>
       {children}
     </WearableContext.Provider>

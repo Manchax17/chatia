@@ -1,12 +1,13 @@
 """Endpoints del chat"""
 
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from datetime import datetime
 from typing import Optional
 
 from ...llm.agent import ChatFitAgent
 from ...llm.llm_factory import LLMFactory
 from ...iot.xiaomi_client import xiaomi_client
+from ...database.chat_db import ChatMemoryDB
 from .models import ChatRequest, ChatResponse, ModelListResponse
 
 router = APIRouter()
@@ -18,7 +19,7 @@ _wearable_cache = {"data": None, "timestamp": None}
 _session_models = {}
 
 @router.post("/", response_model=ChatResponse)
-async def chat(request: ChatRequest, request_obj: Request):
+async def chat(request: ChatRequest, request_obj: Request, chat_id: Optional[str] = Query(None)):
     """
     Endpoint principal del chat
     
@@ -26,6 +27,7 @@ async def chat(request: ChatRequest, request_obj: Request):
     - Incluye datos del reloj Xiaomi si está disponible
     - Usa agente LLM con herramientas
     - Retorna respuesta enriquecida
+    - Guarda en historial de chats si se proporciona chat_id
     """
     try:
         session_id = request_obj.client.host if request_obj.client else "default"
@@ -88,7 +90,7 @@ async def chat(request: ChatRequest, request_obj: Request):
             chat_history=chat_history
         )
         
-        return ChatResponse(
+        response_data = ChatResponse(
             response=result["response"],
             tools_used=result.get("tools_used", []),
             wearable_data=wearable_data,
@@ -96,6 +98,31 @@ async def chat(request: ChatRequest, request_obj: Request):
             success=result["success"],
             error=result.get("error")
         )
+        
+        # ✅ AGREGAR: Guardar en historial si se proporciona chat_id
+        if chat_id:
+            try:
+                # Guardar mensaje del usuario
+                ChatMemoryDB.add_message(
+                    chat_id,
+                    role="user",
+                    content=request.message
+                )
+                
+                # Guardar respuesta del asistente
+                ChatMemoryDB.add_message(
+                    chat_id,
+                    role="assistant",
+                    content=result["response"],
+                    model_used=model_name,
+                    tools_used=result.get("tools_used", [])
+                )
+                
+                print(f"✅ Mensajes guardados en chat {chat_id}")
+            except Exception as e:
+                print(f"⚠️ Error guardando mensajes: {e}")
+        
+        return response_data
         
     except Exception as e:
         import traceback

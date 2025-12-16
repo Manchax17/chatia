@@ -241,7 +241,11 @@ Question: {input}
                 try:
                     # Intentar con invoke
                     result = self.llm.invoke(full_input_with_context)
-                    response_text = str(result)
+                    # Extraer el contenido del mensaje (puede ser AIMessage u otro tipo)
+                    if hasattr(result, 'content'):
+                        response_text = result.content
+                    else:
+                        response_text = str(result)
                 except Exception as e:
                     print(f"⚠️ Error con invoke, intentando con generate: {e}")
                     try:

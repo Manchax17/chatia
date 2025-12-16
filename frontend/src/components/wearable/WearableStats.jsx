@@ -278,7 +278,6 @@ const WearableStats = () => {
       {/* Modal de carga manual */}
       {showManualForm && (
         <ManualDataForm
-          onUpdate={handleManualUpdate}
           onClose={() => setShowManualForm(false)}
         />
       )}

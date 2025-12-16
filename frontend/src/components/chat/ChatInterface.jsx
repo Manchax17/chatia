@@ -3,7 +3,9 @@ import { AlertCircle, RefreshCw, Bot, Cpu, Zap, Brain, Cog } from 'lucide-react'
 import MessageBubble from './MessageBubble';
 import MessageInput from './MessageInput';
 import TypingIndicator from './TypingIndicator';
+import ChatTitleModal from './ChatTitleModal';
 import { chatService } from '../../services/chatService';
+import { useChats } from '../../ChatsContext';
 
 const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
   const [messages, setMessages] = useState([]);
@@ -12,11 +14,33 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
   const [showModelSelector, setShowModelSelector] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // ✅ Usar contexto de chats
+  const { 
+    currentChatId, 
+    currentChat, 
+    addMessage,
+    preparePendingChat,
+    createChatWithTitle,
+    closeTitleModal,
+    showTitleModal,
+    pendingFirstMessage,
+    isCreatingChat
+  } = useChats();
+
   // ✅ Usar settings desde props
   const settings = currentSettings || {
     llmProvider: 'ollama',
     modelName: 'gemma3:1b'  // ← Actualizado al modelo por defecto
   };
+
+  // ✅ Sincronizar mensajes desde el chat actual
+  useEffect(() => {
+    if (currentChat && currentChat.messages) {
+      setMessages(currentChat.messages);
+    } else {
+      setMessages([]);
+    }
+  }, [currentChat]);
 
   // ✅ Definir modelos disponibles
   const availableModels = {
@@ -55,6 +79,12 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
   const handleSendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
+    // ✅ NUEVO: Si no hay chat, mostrar modal para crear uno
+    if (!currentChatId) {
+      preparePendingChat(messageText);
+      return;
+    }
+
     const userMessage = {
       role: 'user',
       content: messageText,
@@ -83,7 +113,8 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
         { 
           includeWearable: true,
           llmProvider: settings.llmProvider,
-          modelName: settings.modelName
+          modelName: settings.modelName,
+          chat_id: currentChatId  // ← Pasar chat_id para persistencia
         }
       );
 
@@ -96,6 +127,15 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+
+      // ✅ Guardar en la base de datos si hay chat actual
+      if (currentChatId) {
+        try {
+          await addMessage('assistant', response.response, settings.modelName, response.tools_used);
+        } catch (err) {
+          console.warn('Error saving assistant message to database:', err);
+        }
+      }
 
     } catch (err) {
       console.error('Error sending message:', err);
@@ -266,6 +306,14 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
           disabled={false}
         />
       </div>
+
+      {/* ✅ NUEVO: Modal para título del primer chat */}
+      <ChatTitleModal
+        isOpen={showTitleModal}
+        onClose={closeTitleModal}
+        onConfirm={createChatWithTitle}
+        defaultTitle={pendingFirstMessage ? pendingFirstMessage.substring(0, 50) : ''}
+      />
     </div>
   );
 };

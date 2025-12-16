@@ -3,7 +3,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 import logging
 
 from ...iot.xiaomi_client import xiaomi_client
@@ -194,34 +194,54 @@ async def get_connection_info():
 async def update_manual_data(data: WearableUpdateRequest):
     """
     Actualiza datos del wearable manualmente
-    Útil cuando no hay API disponible
+    Útil cuando no hay API disponible o para testing
     
-    Este endpoint solo funciona cuando XIAOMI_CONNECTION_METHOD=manual
+    IMPORTANTE:
+    - Si XIAOMI_CONNECTION_METHOD=manual: Actualiza los datos manualmente
+    - Si XIAOMI_CONNECTION_METHOD=mock: Actualiza los datos mock para testing
+    - Si otro método: Falla con error informativo
     """
     try:
-        # Verificar que esté en modo manual
-        if xiaomi_client.connection_method != "manual":
-            raise HTTPException(
-                status_code=400,
-                detail=f"Este endpoint solo funciona en modo 'manual'. Actualmente: '{xiaomi_client.connection_method}'. Cambia XIAOMI_CONNECTION_METHOD=manual en .env y reinicia el servidor."
+        # Permitir actualización manual en estos modos
+        if xiaomi_client.connection_method == "manual":
+            # Modo manual - actualizar directamente
+            xiaomi_client.update_data(data.dict())
+            updated_data = await xiaomi_client.get_daily_summary()
+            
+            return WearableDataResponse(
+                data=updated_data,
+                success=True
             )
         
-        # Actualizar datos
-        xiaomi_client.update_data(data.dict())
+        elif xiaomi_client.connection_method == "mock":
+            # Modo mock - actualizar datos mock para testing
+            mock_data_dict = data.dict()
+            mock_data_dict['timestamp'] = datetime.now()
+            mock_data_dict['mock_data'] = True
+            mock_data_dict['connection_method'] = 'mock'
+            
+            # Actualizar el diccionario mock_data del cliente
+            xiaomi_client.mock_data.update(mock_data_dict)
+            
+            updated_data = await xiaomi_client.get_daily_summary()
+            
+            return WearableDataResponse(
+                data=updated_data,
+                success=True,
+                message="Datos mock actualizados para testing"
+            )
         
-        # Retornar datos actualizados
-        updated_data = await xiaomi_client.get_daily_summary()
-        
-        return WearableDataResponse(
-            data=updated_data,
-            success=True
-        )
+        else:
+            # Otros métodos (mi_fitness, bluetooth) no permiten actualización manual
+            raise HTTPException(
+                status_code=400,
+                detail=f"Actualización manual no disponible en modo '{xiaomi_client.connection_method}'. Use XIAOMI_CONNECTION_METHOD=manual o mock en .env"
+            )
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error actualizando datos: {e}")
-        # Devolver los datos actuales en caso de error
         current_data = await xiaomi_client.get_daily_summary()
         return WearableDataResponse(
             data=current_data,
