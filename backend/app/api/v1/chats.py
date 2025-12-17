@@ -1,7 +1,11 @@
 """Endpoints para gestión de chats e historial"""
 
 from fastapi import APIRouter, HTTPException, Query
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+try:
+    from zoneinfo import ZoneInfo
+except Exception:
+    ZoneInfo = None
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -19,6 +23,7 @@ class ChatCreateRequest(BaseModel):
 
 class ChatMessageRequest(BaseModel):
     """Request para añadir un mensaje"""
+    model_config = {"protected_namespaces": ()}
     role: str  # "user" o "assistant"
     content: str
     model_used: Optional[str] = None
@@ -38,6 +43,7 @@ class ChatListItem(BaseModel):
 class ChatGrouped(BaseModel):
     """Chats agrupados por período"""
     today: List[ChatListItem] = []
+    yesterday: List[ChatListItem] = []
     this_week: List[ChatListItem] = []
     this_month: List[ChatListItem] = []
     older: List[ChatListItem] = []
@@ -78,46 +84,154 @@ async def create_chat(request: ChatCreateRequest):
             "success": True,
             "chat_id": chat_id,
             "title": title,
-            "created_at": datetime.now().isoformat()
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/chats/create_sample", response_model=dict)
+async def create_sample_chat(days_ago: int = 7, title: Optional[str] = None):
+    """Crea un chat de ejemplo con una antigüedad determinada (en días).
+
+    Útil para pruebas y demostraciones (por ejemplo crear un chat de hace una semana o de hace un día).
+    """
+    try:
+        from datetime import timedelta
+        now = datetime.now(timezone.utc)
+        created_at = (now - timedelta(days=days_ago)).isoformat()
+        title = title or f"Chat de prueba - hace {days_ago} días"
+
+        chat_id = ChatMemoryDB.create_chat(title)
+
+        # Ajustar timestamps del chat
+        chats = ChatMemoryDB._load_chats()
+        if chat_id in chats:
+            chat = chats[chat_id]
+            chat.created_at = created_at
+            chat.updated_at = created_at
+
+            # Añadir mensajes de ejemplo con timestamps correspondientes
+            msgs = [
+                ("user", "Hola, ¿cómo estás?"),
+                ("assistant", "¡Hola! Estoy listo para ayudarte con tus datos de actividad y salud."),
+                ("user", "Calcula mi IMC"),
+                ("assistant", "Tu IMC es 24.0. Esto es un ejemplo generico para el chat de prueba.")
+            ]
+
+            # Remover mensajes existentes y añadir con timestamp
+            chat.messages = []
+            for i, (role, content) in enumerate(msgs):
+                ts = (now - timedelta(days=days_ago, minutes=(len(msgs)-i)*5)).isoformat()
+                chat.messages.append({
+                    "role": role,
+                    "content": content,
+                    "timestamp": ts,
+                    "model_used": None,
+                    "tools_used": []
+                })
+
+            # Guardar cambios
+            ChatMemoryDB._save_chats(chats)
+
+            return {"success": True, "chat_id": chat_id, "days_ago": days_ago}
+        else:
+            raise HTTPException(status_code=500, detail="No se pudo crear el chat de prueba")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chats/create_samples", response_model=dict)
+async def create_sample_chats():
+    """Crea varios chats de ejemplo (7 días, 30 días, 365 días) para pruebas."""
+    try:
+        results = []
+        for days in (7, 30, 365):
+            resp = await create_sample_chat(days_ago=days, title=f"Chat ejemplo - hace {days} días")
+            results.append({"days_ago": days, "success": resp.get('success', False), "chat_id": resp.get('chat_id')})
+        return {"success": True, "created": results}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/chats", response_model=ChatGrouped)
-async def list_chats_grouped():
+async def list_chats_grouped(
+    user_tz: Optional[str] = Query(None, description="IANA timezone (e.g. Europe/Madrid). If provided, grouping by days will use this timezone."),
+    user_tz_offset: Optional[int] = Query(None, description="Timezone offset in minutes as returned by new Date().getTimezoneOffset() (e.g. 300 for UTC-5)")
+):
     """
     Lista todos los chats agrupados por período
-    
-    - Hoy (últimas 24 horas)
+
+    - Hoy (según la hora local del usuario)
     - Esta semana (últimos 7 días)
     - Este mes (últimos 30 días)
     - Anterior (más de 30 días)
     """
     try:
-        now = datetime.now()
+        # Hora base en UTC y lista de chats
+        now_utc = datetime.now(timezone.utc)
         chats = ChatMemoryDB.list_chats(limit=1000)
-        
+
+        # Preparar variables
+        offset_minutes = None
+        use_offset = False
+        user_tzinfo = None
+
+        # Preferimos IANA tz si viene; si no, usamos offset si viene
+        if user_tz and ZoneInfo is not None:
+            try:
+                user_tzinfo = ZoneInfo(user_tz)
+                now_user = now_utc.astimezone(user_tzinfo)
+            except Exception:
+                now_user = now_utc
+                user_tzinfo = None
+        elif user_tz_offset is not None:
+            try:
+                offset_minutes = int(user_tz_offset)
+                now_user = now_utc - timedelta(minutes=offset_minutes)
+                use_offset = True
+            except Exception:
+                now_user = now_utc
+        else:
+            now_user = now_utc
+
         today = []
+        yesterday = []
         this_week = []
         this_month = []
         older = []
-        
+
         for chat in chats:
+            # Parse updated_at e interpretar como UTC si no tiene tz
             updated = datetime.fromisoformat(chat["updated_at"])
-            days_ago = (now - updated).days
-            
+            if updated.tzinfo is None:
+                updated = updated.replace(tzinfo=timezone.utc)
+
+            # Calcular la hora "local" del usuario según la preferencia
+            if use_offset and offset_minutes is not None:
+                updated_user = (updated.astimezone(timezone.utc) - timedelta(minutes=offset_minutes))
+            elif user_tzinfo is not None:
+                updated_user = updated.astimezone(user_tzinfo)
+            else:
+                updated_user = updated.astimezone(timezone.utc)
+
+            days_ago = (now_user.date() - updated_user.date()).days
+
             if days_ago == 0:
                 today.append(chat)
-            elif days_ago <= 7:
+            elif days_ago == 1:
+                yesterday.append(chat)
+            elif 1 < days_ago <= 7:
                 this_week.append(chat)
-            elif days_ago <= 30:
+            elif 7 < days_ago <= 30:
                 this_month.append(chat)
             else:
                 older.append(chat)
-        
+
         return ChatGrouped(
             today=today,
+            yesterday=yesterday,
             this_week=this_week,
             this_month=this_month,
             older=older
@@ -313,5 +427,37 @@ async def get_all_session_memory(session_id: str):
     try:
         memory = ChatMemoryDB.get_all_session_memory(session_id)
         return {"session_id": session_id, "memory": memory}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==================== RAG / Vector Store ====================
+@router.post("/rag/reindex", response_model=dict)
+async def rag_reindex_all():
+    """Resetea y reindexa la colección de RAG con los mensajes actuales"""
+    try:
+        from ..rag.vector_store import vector_store
+        if not vector_store:
+            raise HTTPException(status_code=500, detail="Vector store no inicializado")
+
+        # Resetear (incluye re-poblar conocimiento inicial)
+        vector_store.reset()
+
+        chats = ChatMemoryDB._load_chats()
+        added = 0
+        for chat_id, chat in chats.items():
+            for msg in chat.messages:
+                try:
+                    vector_store.add_documents(
+                        texts=[msg.content],
+                        metadatas=[{"chat_id": chat_id, "role": msg.role, "timestamp": msg.timestamp}]
+                    )
+                    added += 1
+                except Exception as ie:
+                    print(f"⚠️ No se pudo indexar mensaje {chat_id}: {ie}")
+
+        return {"success": True, "added": added}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

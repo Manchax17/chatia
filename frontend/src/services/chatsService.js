@@ -15,8 +15,11 @@ export const chatsService = {
   /**
    * Obtiene lista de chats agrupados por período
    */
-  async listChatsGrouped() {
-    const response = await api.get('/api/v1/chats');
+  async listChatsGrouped(userTz = null, userTzOffset = null) {
+    const params = {};
+    if (userTz) params.user_tz = userTz;
+    if (userTzOffset !== null && userTzOffset !== undefined) params.user_tz_offset = userTzOffset;
+    const response = await api.get('/api/v1/chats', { params });
     return response.data;
   },
 

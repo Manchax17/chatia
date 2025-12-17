@@ -85,6 +85,10 @@ class ChatMemoryDB:
                 data = json.load(f)
                 return {chat_id: Chat.from_dict(chat) for chat_id, chat in data.items()}
         except Exception as e:
+
+
+
+            
             print(f"⚠️ Error cargando chats: {e}")
             return {}
 
@@ -165,6 +169,18 @@ class ChatMemoryDB:
         chats[chat_id].updated_at = datetime.now().isoformat()
         
         ChatMemoryDB._save_chats(chats)
+
+        # Intentar indexar el mensaje en el Vector Store (RAG) para futuras recuperaciones
+        try:
+            from ..rag.vector_store import vector_store
+            if vector_store:
+                vector_store.add_documents(
+                    texts=[content],
+                    metadatas=[{"chat_id": chat_id, "role": role, "timestamp": message.timestamp}]
+                )
+        except Exception as e:
+            print(f"⚠️ Error indexando mensaje en RAG: {e}")
+
         return True
 
     @staticmethod

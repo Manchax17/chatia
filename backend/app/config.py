@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     # ============================================
     chroma_persist_dir: str = "./data/chroma"
     chroma_collection_name: str = "fitness_knowledge"
+    rag_k: int = 4
     
     # ============================================
     # XIAOMI WEARABLE

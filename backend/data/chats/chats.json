@@ -155,5 +155,275 @@
     ],
     "wearable_data_snapshot": null,
     "summary": null
+  },
+  "45ff136d": {
+    "chat_id": "45ff136d",
+    "title": "Chat 6:23:57 p. m.",
+    "created_at": "2025-12-16T18:23:57.035100",
+    "updated_at": "2025-12-16T18:24:39.918112",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Calcula mi IMC",
+        "timestamp": "2025-12-16T18:24:09.421709",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "El asistente calculará tu IMC (Índice de Masa Corporal) basándose en tus datos.\n\nAquí está el cálculo:\n\n*   **Peso (kg):** 72 bpm * 423 kcal/hora = 30646 kcal/hora\n*   **Altura (cm):**  No se proporciona la altura, por lo tanto, no se puede calcular el IMC.\n\n**IMC = Peso (kg) / (Altura (m))^2**\n\n**Por lo tanto, el IMC es:**\n\nIMC = 30646 / (0.5)^2 = 30646 / 0.25 = 12258.4\n\n**IMC: 12258.4**\n\n**Nota:** El IMC se expresa en kilogramos por cada metro cuadrado de altura.  Este valor indica si tienes un peso alto en relación con tu altura.\n\n**Es importante recordar que el IMC es solo una herramienta de evaluación y no debe usarse como la única medida de salud.**\n",
+        "timestamp": "2025-12-16T18:24:09.456451",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "¿Cómo voy con mis pasos hoy?",
+        "timestamp": "2025-12-16T18:24:39.880348",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "El asistente te proporciona un resumen de tus datos:\n\n*   **Pasos:** 8,547\n*   **FC:** 72 bpm\n*   **Calorías:** 423 kcal\n*   **Sueño:** 7.5 hrs\n*   **Distancia:** 5.2 km\n*   **Actividad:** 45 min\n*   **Batería:** 85%\n*   **Modelo:** Xiaomi Mi Band 7\n\n**¿Cómo vas con tus pasos hoy?**  El asistente te proporciona un resumen de tus datos de actividad.\n",
+        "timestamp": "2025-12-16T18:24:39.918112",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      }
+    ],
+    "wearable_data_snapshot": null,
+    "summary": null
+  },
+  "049ef62b": {
+    "chat_id": "049ef62b",
+    "title": "Chat 6:24:36 p. m.",
+    "created_at": "2025-12-16T18:24:39.921813",
+    "updated_at": "2025-12-16T18:24:39.921813",
+    "messages": [],
+    "wearable_data_snapshot": null,
+    "summary": null
+  },
+  "fb8b276f": {
+    "chat_id": "fb8b276f",
+    "title": "Dame consejo de forma extendida de rutina y alimen",
+    "created_at": "2025-12-16T18:36:47.819017",
+    "updated_at": "2025-12-16T19:04:07.769346",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Dame consejo de forma extendida de rutina y alimentación para lograr mi objetivo, ten en cuenta mis características",
+        "timestamp": "2025-12-16T18:36:54.205405",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Lo siento, no pude procesar tu mensaje en este momento.",
+        "timestamp": "2025-12-16T18:36:54.243646",
+        "model_used": "llama3.1:8b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Dame consejo de forma extendida de rutina y alimentación para lograr mi objetivo, ten en cuenta mis características",
+        "timestamp": "2025-12-16T18:37:30.216542",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "¡Hola! Entiendo que quieres un consejo detallado sobre rutina y alimentación para alcanzar tu objetivo. Para poder ayudarte de la mejor manera, necesito un poco más de información sobre ti. Pero, basándome en lo que me has dado hasta ahora (Xiaomi Mi Band 7, 7.5 hrs de sueño, 45 min de actividad física), y asumiendo que tu objetivo es mejorar tu bienestar general, te daré una guía completa.\n\n**1. Entendiendo tu Propósito y Objetivos:**\n\n*   **¿Cuál es tu objetivo principal?**  ¿Perder peso, ganar masa muscular, mejorar tu energía, reducir el estrés, o simplemente sentirte más saludable?  Ser específico te ayudará a enfocar tus esfuerzos.\n*   **¿Qué tipo de objetivo quieres alcanzar?** ¿Quieres perder 5 kg, aumentar tu fuerza, sentirte más descansado, o mejorar tu salud cardiovascular?\n\n**2. Rutina de Ejercicio (Considerando tu Mi Band 7):**\n\n*   **Actividad Principal:**  Dado que tienes 45 minutos de actividad física al día, la clave es la variedad.  No te limites a correr.  Incluye:\n    *   **Caminata:**  La base de tu rutina.  Comienza con 30 minutos y aumenta gradualmente.\n    *   **Ejercicios de Cardio:**  Cinta de correr, bicicleta elíptica, o incluso saltar a la cuerda.  Busca algo que disfrutes para que sea sostenible.\n    *   **Entrenamiento de Fuerza:**  Si es posible, incorpora ejercicios para fortalecer tus músculos.  Puedes usar tu propio peso o usar bandas de resistencia.  Empieza con 15-20 minutos.\n*   **Rutina Semanal:**  Intenta dedicar al menos 3 días a la semana a ejercicio.  Un día libre es importante para el descanso y recuperación.\n*   **Considera la intensidad:**  No te excedas al principio.  Prioriza la consistencia sobre la intensidad.\n\n**3. Alimentación: Una Guía Detallada**\n\n*   **Calorías:**  Para perder peso, necesitas consumir menos calorías de las que quemas.  Un cálculo rápido (basado en tu actividad física) podría ser alrededor de 200-300 calorías menos al día.  *Importante: Consulta con un profesional de la salud para un cálculo personalizado.*\n*   **Macronutrientes:**\n    *   **Proteínas:**  Son cruciales para la construcción y reparación de tejidos.  Apunta a 1.2 - 1.7 gramos por kilogramo de peso corporal.  Buenas fuentes: pollo, pescado, legumbres, tofu, huevos, lácteos.\n    *   **Carbohidratos:**  Proporcionan energía.  Elige carbohidratos complejos (granos integrales, verduras, frutas) en lugar de carbohidratos simples (azúcar, pan blanco).\n    *   **Grasas:**  Importantes para la salud hormonal y la absorción de nutrientes.  Elige grasas saludables (aguacate, nueces, aceite de oliva, pescado graso).\n*   **Hidratación:**  Bebe al menos 2 litros de agua al día.  La deshidratación puede afectar tu energía y estado de ánimo.\n*   **Alimentos Priorizados:**\n    *   **Verduras:**  Ricas en vitaminas, minerales y fibra.  Incluye muchas verduras de hoja verde, brócoli, zanahoria, pimiento.\n    *   **Frutas:**  Fuente de vitaminas, minerales y antioxidantes.  Elige frutas con bajo contenido de azúcar.\n    *   **Proteínas Magras:**  Pollo, pescado, legumbres, tofu.\n    *   **Granos Integrales:**  Arroz integral, quinoa, avena.\n*   **Alimentos a Evitar (o Moderar):**\n    *   **Alimentos procesados:**  Son altos en azúcar, grasas y sodio.\n    *   **Azúcar:**  Evita los dulces, refrescos, y postres.\n    *   **Comida rápida:**  Generalmente, es alta en calorías, grasas no saludables y sodio.\n    *   **Alcohol:**  Puede afectar tu peso y energía.\n\n**4. Rutina de Sueño:**\n\n*   **Prioriza 7-9 horas de sueño de calidad.**  La falta de sueño afecta tu metabolismo, energía y estado de ánimo.\n*   **Establece un horario regular de sueño:** Acuéstate y levántate a la misma hora todos los días, incluso los fines de semana.\n*   **Crea un ambiente propicio para el sueño:**  Oscuridad, silencio, temperatura fresca.\n*   **Evita pantallas antes de acostarte:**  La luz azul de las pantallas puede interferir con la producción de melatonina.\n\n**5.  Herramientas y Seguimiento:**\n\n*   **Lleva un diario:** Anota lo que comes, cómo te sientes, y cuánto ejercicio haces.\n*   **Aplicaciones de seguimiento de alimentos:**  MyFitnessPal, FatSecret, o similar te ayudan a registrar lo que comes.\n*   **Planifica tus comidas:**  Planificar tus comidas te ayuda a evitar decisiones poco saludables.\n\n**Importante:**  Esta es una guía general.  **Es crucial que consultes con un profesional de la salud o un nutricionista** para que te ayuden a crear un plan personalizado que se adapte a tus necesidades individuales, objetivos y estado de salud.\n\n**Para ayudarte aún más, ¿podrías decirme:**\n\n*   ¿Cuál es tu objetivo principal? (Perder peso, ganar masa muscular, mejorar la energía, etc.?)\n*   ¿Tienes alguna alergia o intolerancia alimentaria?\n*   ¿Hay algún alimento que no te guste o que no puedas consumir?\n*   ¿Tienes alguna preferencia en cuanto a tipo de comida (por ejemplo, vegetariano, vegano)?",
+        "timestamp": "2025-12-16T18:37:30.250776",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Calcula mi IMC",
+        "timestamp": "2025-12-16T18:49:07.050292",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, vamos a calcular tu Índice de Masa Corporal (IMC).\n\n**1. Calcular el IMC:**\n\nEl IMC se calcula de la siguiente manera:\n\n*   **IMC = Peso (kg) / (Altura (m))^2**\n\n**2. Ingresa tus datos:**\n\n*   Peso: 72 kg\n*   Altura: 170 cm\n\n**3. Cálculo:**\n\nIMC = 72 / (1.70)^2\nIMC = 72 / 2.89\nIMC = 24.03\n\n**4. Interpretación del IMC:**\n\nTu IMC es de 24.03.  Esto se considera dentro del rango de **¿Normal?**\n\n**5. Recomendaciones (Basado en el rango de normal):**\n\n*   **Si tu IMC está por debajo de 18.5:**  Considera un estilo de vida saludable.\n*   **Si tu IMC está entre 18.5 y 24.9:**  Considera un estilo de vida saludable.\n*   **Si tu IMC está entre 25 y 29.9:**  Considera un estilo de vida saludable.\n*   **Si tu IMC está por encima de 29.9:**  Considera un estilo de vida saludable.\n\n**6.  Consideraciones Adicionales (Basado en tu perfil):**\n\nDado que tienes 20 años y estás buscando mejorar tu bienestar general, te recomiendo que sigas una dieta equilibrada y que te mantengas activo.  Aunque tu IMC es dentro del rango normal, es importante que no te enfoques solo en el número.  La salud general es más importante.\n\n**7.  Sugerencias para mejorar tu bienestar:**\n\n*   **Aumenta tu actividad física:**  Aunque tienes 45 minutos de actividad física al día, intenta aumentar la intensidad o duración.\n*   **Prioriza una alimentación saludable:**  Aunque no se ha especificado un plan de alimentación, es importante consumir suficientes proteínas, carbohidratos complejos y grasas saludables.\n*   **Duerme lo suficiente:**  Asegúrate de dormir 7-9 horas por noche.\n*   **Gestiona el estrés:**  El estrés puede afectar tu peso. Encuentra formas de relajarte y reducir el estrés.\n\n**¿Hay algo más que te gustaría saber o que te gustaría que te sugiera?**\n",
+        "timestamp": "2025-12-16T18:49:07.080610",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Qué fue mejor, mi desempeño el día de hoy o ayer",
+        "timestamp": "2025-12-16T18:53:48.328696",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Asistente: Lo siento, no pude procesar tu mensaje en este momento.",
+        "timestamp": "2025-12-16T18:53:48.345859",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Qué fue mejor, mi desempeño el día de hoy o ayer\n\n",
+        "timestamp": "2025-12-16T18:54:10.114210",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Asistente: ¡Hola! Entiendo que quieres saber qué fue mejor: tu desempeño del día de hoy o el día anterior.  Para poder darte una respuesta precisa, necesito un poco más de información.  ¿Podrías decirme qué tipo de desempeño estás preguntando? Por ejemplo, ¿estás hablando de:\n\n*   **Tu actividad física?** (¿Cuántos minutos caminaste, corriste, etc.?)\n*   **Tu productividad en el trabajo o estudio?** (¿Cuánto completaste en un día?)\n*   **Tu nivel de energía?** (¿Te sentías más alerta o cansada?)\n*   **Algo más específico?** (Por ejemplo, ¿tu rendimiento en un ejercicio en particular?)\n\nCuanta más información me des, mejor podré entender tu pregunta y darte una respuesta útil.",
+        "timestamp": "2025-12-16T18:54:10.144536",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Puedes recordar mi primer mensaje?",
+        "timestamp": "2025-12-16T18:55:53.477294",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Sí, puedo recordar tu primer mensaje.",
+        "timestamp": "2025-12-16T18:55:53.503664",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Descríbemelo con las palabras que usé",
+        "timestamp": "2025-12-16T18:56:26.895950",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "El usuario está preguntando sobre la comparación entre su desempeño del día de hoy y el día anterior.",
+        "timestamp": "2025-12-16T18:56:26.923654",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "No, mi primer mensaje",
+        "timestamp": "2025-12-16T18:56:51.270589",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "El usuario está preguntando sobre la comparación entre su desempeño del día de hoy y el día anterior.",
+        "timestamp": "2025-12-16T18:56:51.297512",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Antes de eso te pregunté: \"Dame consejo de forma extendida de rutina y alimentación para lograr mi objetivo, ten en cuenta mis características\"",
+        "timestamp": "2025-12-16T18:57:26.596330",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "¡Hola! Entiendo que estás buscando consejo sobre cómo optimizar tu rutina y alimentación para alcanzar tus objetivos de ganancia de masa muscular.  Como ya has compartido que te estás enfocando en tu desempeño de hoy, puedo ofrecerte una perspectiva basada en tu perfil y en el análisis de tu dispositivo Xiaomi Mi Band 7.\n\n**En resumen, tu desempeño de hoy, con un ritmo de 45 minutos de actividad, batería al 85% y un sueño de 7.5 horas, sugiere que estás en una fase de recuperación y ajuste.  La batería al 85% y el sueño de 7.5 horas indican que necesitas optimizar tu actividad física y descanso para maximizar la recuperación.**\n\n**Aquí te dejo algunas recomendaciones basadas en tu perfil y en el análisis de tu dispositivo:**\n\n**1. Rutina de Entrenamiento:**\n\n*   **Volumen:**  Dado que tienes un rendimiento de 45 minutos, podrías considerar un entrenamiento de **intensidad moderada a alta**.  Esto implica entrenamientos que te desafíen pero que te permitan mantener una buena forma durante un período prolongado.\n*   **Tipo de Entrenamiento:**  Considera combinar ejercicios compuestos (sentadillas, peso muerto, press de hombros) con ejercicios de aislamiento (curl de bíceps, tríceps) y cardio ligero.  Un buen punto de partida sería 3-4 series de 8-12 repeticiones de cada ejercicio.\n*   **Frecuencia:**  Mantén una frecuencia de entrenamiento de **3-4 veces por semana**.\n*   **Descanso:** Asegúrate de tener **al menos 1 día de descanso completo entre sesiones de entrenamiento**.\n\n**2. Alimentación:**\n\n*   **Proteínas:**  Tu objetivo principal es la ganancia de masa muscular, por lo que es crucial aumentar tu ingesta de proteínas.  Intenta consumir **alrededor de 1.6 - 2.2 gramos de proteína por kilogramo de peso corporal al día**.  Considera fuentes como pollo, pescado, huevos, legumbres, tofu, o proteína en polvo.\n*   **Carbohidratos:**  Los carbohidratos son tus principales fuentes de energía para el entrenamiento.  Asegúrate de consumir suficientes carbohidratos para reponer las reservas de glucógeno y apoyar la recuperación.\n*   **Grasas:**  Las grasas son importantes para la producción de hormonas y la salud general.  Incorpora grasas saludables como aguacate, nueces, semillas, aceite de oliva, etc.\n*   **Calorías:**  Para ganar masa muscular, necesitas un ligero superávit calórico (consumir un poco más de calorías de las que quemas).  Un buen punto de partida podría ser un aumento de **200-300 calorías al día**.  *Es importante monitorizar tu progreso y ajustar las calorías según sea necesario.*\n*   **Hidratación:**  Bebe suficiente agua durante todo el día, especialmente antes, durante y después del entrenamiento.\n\n**3.  Consideraciones Específicas para tu Dispositivo Xiaomi Mi Band 7:**\n\n*   **Monitor de Energía:**  Utiliza el monitor de energía para tener una idea de tu nivel de actividad física.  Si tu batería está al 85%, es hora de ajustar tu rutina.\n*   **Actividad:**  Asegúrate de que tu dispositivo esté activo durante al menos 30 minutos al día, incluso si no estás haciendo ejercicio.\n*   **Establece un recordatorio:** Configura un recordatorio para que te detengas y te relajes cada 30-60 minutos.\n\n**Recomendación:**\n\nTe sugiero que empieces con un programa de entrenamiento de 3 días a la semana, con un enfoque en ejercicios compuestos y cardio ligero.  Luego, ajusta tu dieta para aumentar las proteínas y los carbohidratos, y observa cómo responde tu cuerpo.\n\n**¿Qué más te gustaría saber o qué tipo de entrenamiento te interesa más?** (Ej: HIIT, entrenamiento de fuerza, yoga, etc.)  Cuéntame más sobre tus objetivos y preferencias para poder darte recomendaciones más personalizadas.\n",
+        "timestamp": "2025-12-16T18:57:26.625315",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "¿Cómo voy con mis pasos hoy?",
+        "timestamp": "2025-12-16T19:04:07.696897",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "El usuario está preguntando cómo está progresando con los pasos que ha tomado hoy.\n",
+        "timestamp": "2025-12-16T19:04:07.769346",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      }
+    ],
+    "wearable_data_snapshot": null,
+    "summary": null
+  },
+  "54ae81b2": {
+    "chat_id": "54ae81b2",
+    "title": "Chat 7:22:00 p. m.",
+    "created_at": "2025-12-16T19:22:00.067558",
+    "updated_at": "2025-12-16T19:23:55.123751",
+    "messages": [
+      {
+        "role": "user",
+        "content": "¿Cómo voy con mis pasos hoy?",
+        "timestamp": "2025-12-16T19:22:11.066072",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "¡Hola! Con tus 8,547 pasos hoy, estás en un buen camino para alcanzar tus objetivos de masa muscular.  Has llegado a 423 kcal, lo cual es un buen punto de partida.  \n\n**En general, tu ritmo actual es bueno, pero podrías aumentar tu actividad física para obtener más calorías y mejorar tu composición corporal.**\n\n**Aquí te dejo algunas sugerencias:**\n\n*   **Aumenta tu actividad física:**  Considera añadir 15-30 minutos de ejercicio moderado (caminar, correr, bicicleta) al día.\n*   **Aumenta tu ingesta calórica:**  Aumenta tu ingesta calórica en aproximadamente 200-300 kcal por día.  Esto te ayudará a ganar masa muscular.\n*   **Prioriza la proteína:** Asegúrate de consumir suficiente proteína (alrededor de 1.6-2.2 gramos por kilogramo de peso corporal) para apoyar la recuperación y el crecimiento muscular.\n\n**¿Qué te gustaría saber más sobre tu progreso? ¿Quieres que te sugiera un plan de entrenamiento o alguna estrategia para aumentar tu ingesta calórica?**\n",
+        "timestamp": "2025-12-16T19:22:11.160984",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Calcula mi IMC",
+        "timestamp": "2025-12-16T19:22:20.405252",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, vamos a calcular tu IMC.\n\n**IMC = Peso (kg) / (Altura (m))^2**\n\nTu peso es de 72 kg y tu altura es de 170 cm.\n\n**IMC = 72 / (1.70)^2 = 72 / 2.89 = 24.54**\n\n**Resultado:** Tu IMC es de 24.54.\n\n**Interpretación:**  Tu IMC se sitúa en el rango de **24.5 a 29.9**.  Dado que tu IMC está dentro del rango de **25 a 29.9**,  **estás en peso saludable**.\n\n**En resumen, tu IMC es de 24.5, lo cual es considerado como peso saludable.**\n\n¿Te gustaría saber algo más sobre tu peso o si quieres explorar opciones para mejorar tu IMC?\n",
+        "timestamp": "2025-12-16T19:22:20.454904",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "¿Cuál es mi zona de frecuencia cardíaca?",
+        "timestamp": "2025-12-16T19:23:27.063849",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, vamos a buscar tu zona de frecuencia cardíaca.\n\nPara esto, necesito que me proporciones tu frecuencia cardíaca actual.  Puedes:\n\n*   **Muestra tu frecuencia cardíaca en tiempo real:**  Si tienes acceso a una aplicación o dispositivo que te permita ver tu frecuencia cardíaca, puedes mostrarla aquí.\n*   **Muestra tu frecuencia cardíaca en un momento específico:**  Si no tienes acceso a una herramienta en tiempo real, puedes decirme el valor que estás viendo en tu dispositivo (por ejemplo, \"mi frecuencia cardíaca es 60 bpm\").\n\nUna vez que me proporciones tu frecuencia cardíaca, podré ayudarte a identificar tu zona de frecuencia cardíaca.\n",
+        "timestamp": "2025-12-16T19:23:27.146867",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "user",
+        "content": "Dame consejos para mejorar mi sueño",
+        "timestamp": "2025-12-16T19:23:38.768389",
+        "model_used": null,
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "Okay, ¡entendido! Mejorar el sueño es crucial para el rendimiento muscular y la recuperación. Aquí tienes algunos consejos que te pueden ayudar:\n\n**1. Establece una Rutina:**\n\n*   **Horario Regular:** Acuéstate y levántate a la misma hora todos los días, incluso los fines de semana, para regular tu reloj biológico.\n*   **Tiempo de Sueño:** Intenta dormir entre 7 y 9 horas cada noche.\n\n**2. Crea un Ambiente Propicio:**\n\n*   **Oscuridad:** Asegúrate de que tu habitación esté lo más oscura posible. Usa cortinas opacas o una máscara para dormir si es necesario.\n*   **Silencio:** Reduce el ruido. Si es necesario, usa tapones para los oídos o una máquina de ruido blanco.\n*   **Temperatura:** Mantén una temperatura fresca en tu habitación (alrededor de 18-20°C).\n*   **Comodidad:** Asegúrate de que tu cama y tu colchón sean cómodos.\n\n**3. Mejora tus Hábitos:**\n\n*   **Evita la Cafeína y el Alcohol:** Evita estas sustancias, especialmente antes de acostarte.\n*   **Limita la Luz Azul:** La luz azul emitida por pantallas (teléfono, tablet, ordenador) puede interferir con la producción de melatonina, la hormona del sueño. Usa filtros de luz azul o apaga las pantallas al menos una hora antes de acostarte.\n*   **Desconéctate de la Tecnología:** Evita revisar el correo electrónico o las redes sociales al menos una hora antes de dormir.\n*   **Relajación:** Practica técnicas de relajación como meditación, yoga o respiración profunda.\n*   **Crea una Rutina de Relajación:**  Un baño caliente, leer un libro, escuchar música relajante, o simplemente sentarte en silencio pueden ayudar a relajarte.\n\n**4. Considera la Alimentación:**\n\n*   **No Comas Suficiente:** Asegúrate de comer algo ligero antes de acostarte.\n*   **Evita los Alimentos Pesados:**  Evita comidas pesadas o picantes cerca de la hora de acostarte.\n\n**5. Si el Problema Persiste:**\n\n*   **Consulta a un Médico:** Si tienes problemas de sueño persistentes, es importante que hables con un médico para descartar cualquier problema de salud subyacente.\n\n**¿Qué te parece si te hago algunas preguntas más específicas para ayudarte a personalizar estos consejos? Por ejemplo:**\n\n*   ¿Tienes alguna dificultad para conciliar el sueño?\n*   ¿Cómo es tu rutina de sueño actual?\n*   ¿Qué tipo de actividades realizas antes de acostarte?",
+        "timestamp": "2025-12-16T19:23:38.820305",
+        "model_used": "gemma3:1b",
+        "tools_used": []
+      },
+      {
+        "role": "assistant",
+        "content": "¡Claro! Tu primer mensaje fue: \"¿Cómo voy con mis pasos hoy?\"",
+        "timestamp": "2025-12-16T19:23:55.123751",
+        "model_used": null,
+        "tools_used": []
+      }
+    ],
+    "wearable_data_snapshot": null,
+    "summary": null
   }
 }

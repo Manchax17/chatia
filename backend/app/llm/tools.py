@@ -448,15 +448,20 @@ def analyze_heart_rate(current_hr: int, age: int, context: str = "reposo") -> st
 @tool
 def get_user_profile() -> str:
     """
-    Obtiene el perfil del usuario desde la configuración.
+    Obtiene el perfil del usuario desde la memoria global si está disponible,
+    o desde la configuración por defecto.
     
     Returns:
-        Información del perfil del usuario (peso, altura, edad, género, nivel de actividad)
+        Información del perfil del usuario (peso, altura, edad, género, nivel de actividad, objetivo)
     """
-    from ..config import settings
-    
-    profile = settings.mock_user_profile
-    
+    try:
+        from ..database.chat_db import ChatMemoryDB
+        from ..config import settings
+        profile = ChatMemoryDB.get_global_memory('user_profile', settings.mock_user_profile)
+    except Exception:
+        from ..config import settings
+        profile = settings.mock_user_profile
+
     return f"""
 👤 **PERFIL DEL USUARIO**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -464,6 +469,7 @@ def get_user_profile() -> str:
 ⚖️ Peso: {profile.get('weight_kg', 'N/A')} kg
 📏 Altura: {profile.get('height_cm', 'N/A')} cm
 🚻 Género: {profile.get('gender', 'N/A')}
+🎯 Objetivo: {profile.get('goal', 'N/A')}
 🏃‍♂️ Nivel de actividad: {profile.get('activity_level', 'N/A')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """

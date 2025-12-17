@@ -134,7 +134,7 @@ function App() {
 
             {/* Wearable Sidebar */}
             <aside className="w-80 border-r border-gray-800 bg-gray-900/50 backdrop-blur-xl overflow-hidden flex-shrink-0">
-              <WearableStats />
+              <WearableStats onOpenSettings={() => setShowSettings(true)} />
             </aside>
 
             {/* Chat Area */}

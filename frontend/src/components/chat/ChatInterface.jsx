@@ -19,6 +19,7 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
     currentChatId, 
     currentChat, 
     addMessage,
+    addLocalMessage,
     preparePendingChat,
     createChatWithTitle,
     closeTitleModal,
@@ -85,21 +86,18 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
       return;
     }
 
-    const userMessage = {
-      role: 'user',
-      content: messageText,
-      timestamp: new Date(),
-    };
+    // Añadir mensaje del usuario localmente (no hace POST adicional)
+    addLocalMessage('user', messageText);
 
-    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     setError(null);
 
     try {
-      const chatHistory = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Construir historial incluyendo el mensaje que acabamos de añadir localmente
+      const chatHistory = [
+        ...messages.map(msg => ({ role: msg.role, content: msg.content })),
+        { role: 'user', content: messageText }
+      ];
 
       console.log('🚀 Enviando mensaje con configuración:', {
         provider: settings.llmProvider,
@@ -118,24 +116,8 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
         }
       );
 
-      const assistantMessage = {
-        role: 'assistant',
-        content: response.response,
-        tools_used: response.tools_used,
-        model_info: response.model_info,
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, assistantMessage]);
-
-      // ✅ Guardar en la base de datos si hay chat actual
-      if (currentChatId) {
-        try {
-          await addMessage('assistant', response.response, settings.modelName, response.tools_used);
-        } catch (err) {
-          console.warn('Error saving assistant message to database:', err);
-        }
-      }
+      // Añadir la respuesta del asistente SOLO localmente (el backend ya la guarda)
+      addLocalMessage('assistant', response.response, settings.modelName, response.tools_used);
 
     } catch (err) {
       console.error('Error sending message:', err);
@@ -148,7 +130,7 @@ const ChatInterface = ({ wearableData, currentSettings, onSettingsChange }) => {
         timestamp: new Date(),
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      addLocalMessage('assistant', errorMessage.content, null, []);
     } finally {
       setIsLoading(false);
     }

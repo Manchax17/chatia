@@ -126,7 +126,7 @@ const ChatHistory = () => {
 
                 {/* Información adicional */}
                 <div className="text-xs opacity-60 ml-6 mt-1">
-                  {chat.message_count} mensajes
+                  {chat.message_count} mensajes • {new Date(chat.updated_at).toLocaleString()}
                 </div>
               </div>
             ))}
@@ -156,6 +156,7 @@ const ChatHistory = () => {
       {/* Lista de chats */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {chats.today.length === 0 &&
+        chats.yesterday.length === 0 &&
         chats.this_week.length === 0 &&
         chats.this_month.length === 0 &&
         chats.older.length === 0 ? (
@@ -167,7 +168,9 @@ const ChatHistory = () => {
         ) : (
           <>
             {renderChatGroup('🕐 Hoy', 'today', chats.today)}
+            {renderChatGroup('🌤️ Ayer', 'yesterday', chats.yesterday)}
             {renderChatGroup('📅 Esta semana', 'this_week', chats.this_week)}
+            {renderChatGroup('📆 Este mes', 'this_month', chats.this_month)}
             {renderChatGroup('📆 Este mes', 'this_month', chats.this_month)}
             {renderChatGroup('📊 Anterior', 'older', chats.older)}
           </>
@@ -176,7 +179,7 @@ const ChatHistory = () => {
 
       {/* Footer */}
       <div className="px-3 py-2 border-t border-gray-800 text-xs text-gray-500 text-center">
-        {chats.today.length + chats.this_week.length + chats.this_month.length + chats.older.length} chats totales
+        {chats.today.length + chats.yesterday.length + chats.this_week.length + chats.this_month.length + chats.older.length} chats totales
       </div>
     </div>
   );

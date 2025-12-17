@@ -14,15 +14,19 @@ import {
 import StatsCard from './StatsCard';
 import ManualDataForm from './ManualDataForm';
 import { wearableService } from '../../services/wearableService';
+import { chatsService } from '../../services/chatsService';
 import { useWearable } from '../../WearableContext'; // Asegúrate de importar el contexto
 
-const WearableStats = () => {
+const WearableStats = ({ onOpenSettings }) => {
   // Obtener estados y funciones del contexto
   const { wearableData, setWearableData, refreshWearableData, loading, error } = useWearable();
 
   const [syncing, setSyncing] = useState(false);
   const [connectionInfo, setConnectionInfo] = useState(null);
   const [showManualForm, setShowManualForm] = useState(false);
+
+  // Perfil del usuario (obtenido desde memoria global)
+  const [profile, setProfile] = useState(null);
 
   // La función fetchData ahora no maneja setLoading ni setError localmente
   const fetchData = async () => {
@@ -71,6 +75,21 @@ const WearableStats = () => {
     }
   };
 
+  // Obtener perfil del usuario desde memoria global
+  const fetchProfile = async () => {
+    try {
+      const res = await chatsService.getGlobalMemory('user_profile');
+      if (res && res.value) {
+        setProfile(res.value);
+      } else {
+        setProfile(null);
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+      setProfile(null);
+    }
+  };
+
   const handleSync = async () => {
     try {
       setSyncing(true);
@@ -97,10 +116,24 @@ const WearableStats = () => {
   useEffect(() => {
     fetchData();
     fetchConnectionInfo();
+    fetchProfile();
+
+    // Escuchar cambios de perfil emitidos desde otros componentes
+    const onProfileUpdated = (e) => {
+      if (e && e.detail) setProfile(e.detail);
+    };
+
+    window.addEventListener('user_profile_updated', onProfileUpdated);
 
     // Auto-refresh cada 5 minutos
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      fetchData();
+      fetchProfile();
+    }, 5 * 60 * 1000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('user_profile_updated', onProfileUpdated);
+    };
   }, []); // Agrega dependencias si refreshWearableData cambia
 
   // Renderizado condicional basado en `loading` y `error` del contexto
@@ -225,6 +258,25 @@ const WearableStats = () => {
             color="orange"
             subtext="Quemadas hoy"
           />
+
+          {/* Perfil de usuario */}
+          <div>
+            <StatsCard
+              icon={Activity}
+              label="Perfil"
+              value={profile ? `${profile.age ? profile.age + ' años • ' : ''}${profile.weight_kg ? profile.weight_kg + ' kg • ' : ''}${profile.height_cm ? profile.height_cm + ' cm • ' : ''}${profile.goal || ''}` : 'No definido'}
+              color="blue"
+              subtext={profile ? 'Editar en Configuración' : 'Agrega tu perfil en Configuración'}
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={() => onOpenSettings && onOpenSettings()}
+                className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 rounded-md text-white"
+              >
+                Editar
+              </button>
+            </div>
+          </div>
 
           {/* Frecuencia cardíaca */}
           <StatsCard

@@ -10,11 +10,22 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     """Request para el endpoint de chat"""
+    model_config = {"protected_namespaces": ()}
     message: str = Field(..., description="Mensaje del usuario")
     chat_history: Optional[List[Message]] = Field(default=[], description="Historial de conversación")
     include_wearable: bool = Field(default=True, description="Incluir datos del wearable")
     llm_provider: Optional[str] = Field(default=None, description="Proveedor LLM (openai, ollama, huggingface)")
     model_name: Optional[str] = Field(default=None, description="Nombre del modelo específico")
+
+class ChatResponse(BaseModel):
+    """Response del endpoint de chat"""
+    model_config = {"protected_namespaces": ()}
+    response: str = Field(..., description="Respuesta del asistente")
+    tools_used: List[Dict] = Field(default=[], description="Herramientas utilizadas")
+    wearable_data: Optional[Dict] = Field(default=None, description="Datos del wearable usados")
+    model_info: Dict = Field(default={}, description="Información del modelo usado")
+    success: bool = Field(..., description="Si la operación fue exitosa")
+    error: Optional[str] = Field(default=None, description="Mensaje de error si hubo")
 
 class ChatResponse(BaseModel):
     """Response del endpoint de chat"""

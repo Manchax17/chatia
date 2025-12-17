@@ -1,0 +1,15 @@
+{
+  "global": {
+    "user_preferences": {},
+    "learned_habits": [],
+    "user_profile": {
+      "age": 20,
+      "weight_kg": 72,
+      "height_cm": 170,
+      "goal": "Ganancia de masa muscular",
+      "gender": "N/A",
+      "activity_level": ""
+    }
+  },
+  "sessions": {}
+}

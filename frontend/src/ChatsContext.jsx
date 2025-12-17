@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { chatsService } from './services/chatsService';
+import { chatService } from './services/chatService';
 
 const ChatsContext = createContext();
 
@@ -7,6 +8,7 @@ export const ChatsProvider = ({ children }) => {
   const [currentChatId, setCurrentChatId] = useState(null);
   const [chats, setChats] = useState({
     today: [],
+    yesterday: [],
     this_week: [],
     this_month: [],
     older: []
@@ -23,7 +25,20 @@ export const ChatsProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      const grouped = await chatsService.listChatsGrouped();
+      // Detectar timezone del navegador para agrupar correctamente (IANA + offset en minutos)
+      let tz = null;
+      let tzOffset = null;
+      try {
+        tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      } catch (e) {
+        tz = null;
+      }
+      try {
+        tzOffset = new Date().getTimezoneOffset();
+      } catch (e) {
+        tzOffset = null;
+      }
+      const grouped = await chatsService.listChatsGrouped(tz, tzOffset);
       setChats(grouped);
     } catch (err) {
       console.error('Error cargando chats:', err);
@@ -71,7 +86,7 @@ export const ChatsProvider = ({ children }) => {
     }
   };
 
-  // Añadir mensaje al chat actual
+  // Añadir mensaje al chat actual (server + local)
   const addMessage = async (role, content, modelUsed = null, toolsUsed = []) => {
     if (!currentChatId) return false;
 
@@ -96,6 +111,28 @@ export const ChatsProvider = ({ children }) => {
       console.error('Error añadiendo mensaje:', err);
       return false;
     }
+  };
+
+  // Añade un mensaje SOLO localmente (no hace llamada al servidor)
+  const addLocalMessage = (role, content, modelUsed = null, toolsUsed = []) => {
+    if (!currentChatId) return false;
+
+    setCurrentChat(prev => ({
+      ...prev,
+      messages: [
+        ...(prev.messages || []),
+        {
+          role,
+          content,
+          timestamp: new Date().toISOString(),
+          model_used: modelUsed,
+          tools_used: toolsUsed
+        }
+      ],
+      updated_at: new Date().toISOString()
+    }));
+
+    return true;
   };
 
   // Actualizar título del chat
@@ -174,15 +211,19 @@ export const ChatsProvider = ({ children }) => {
 
       setCurrentChatId(chatId);
       
-      // 2. Añadir primer mensaje del usuario
-      console.log('💬 Guardando primer mensaje...');
-      await chatsService.addMessage(chatId, 'user', pendingFirstMessage);
-      
-      // 3. Recargar lista de chats
+      // 2. Enviar el primer mensaje al endpoint de chat (backend guardará user + assistant)
+      console.log('💬 Enviando primer mensaje al chat...');
+      try {
+        await chatService.sendMessage(pendingFirstMessage, [], { includeWearable: true, chat_id: chatId });
+      } catch (sendErr) {
+        console.warn('⚠️ Error enviando primer mensaje, se guardará localmente:', sendErr);
+        // Guardar solo el mensaje del usuario en caso de fallo de envío
+        await chatsService.addMessage(chatId, 'user', pendingFirstMessage);
+      }
+
+      // 3. Recargar lista de chats y cargar el chat creado
       console.log('📋 Recargando lista de chats...');
       await loadChats();
-      
-      // 4. Cargar el chat creado
       console.log('📖 Cargando chat creado...');
       const chat = await chatsService.getChat(chatId);
       setCurrentChat(chat);
@@ -227,6 +268,7 @@ export const ChatsProvider = ({ children }) => {
       createNewChat,
       loadChat,
       addMessage,
+      addLocalMessage,
       updateChatTitle,
       updateChatSummary,
       deleteChat,

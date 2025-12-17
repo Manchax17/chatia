@@ -289,7 +289,123 @@ async def main():
         ("Chat with Tools", test_chat_with_tools),
         ("Chat with Wearable", test_chat_with_wearable),
         ("Conversation", test_conversation),
+        ("RAG Reindex + Query", test_rag_reindex_and_query),
+        ("Recall First Message", test_recall_first_message),
     ]
+
+async def test_recall_first_message():
+    """Test que verifica que se puede recordar el primer mensaje de una conversación"""
+    print_test("Recall First Message")
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        try:
+            # Crear chat
+            create_resp = await client.post(f"{BASE_URL}/api/v1/chats/create", json={"title": "Test Recall"})
+            create_data = create_resp.json()
+            if not create_data.get('success'):
+                print_error("No se pudo crear chat para el test")
+                return
+            chat_id = create_data['chat_id']
+
+            # Enviar primer mensaje y asegurarse que se guarde
+            payload1 = {"message": "Hola, ¿cómo estás?", "chat_history": [], "include_wearable": False}
+            resp1 = await client.post(f"{BASE_URL}/api/v1/chat/?chat_id={chat_id}", json=payload1)
+            data1 = resp1.json()
+            if not data1.get('success'):
+                print_error("Primer mensaje falló al guardarse")
+                return
+
+            # Preguntar por el primer mensaje
+            payload2 = {"message": "¿Me puedes recordar mi primer mensaje?", "chat_history": [], "include_wearable": False}
+            resp2 = await client.post(f"{BASE_URL}/api/v1/chat/?chat_id={chat_id}", json=payload2)
+            data2 = resp2.json()
+
+            if resp2.status_code == 200 and data2.get('success'):
+                print_success("Respuesta de recuerdo recibida")
+                if 'Hola' in data2.get('response', ''):
+                    print_success("El primer mensaje fue recordado correctamente")
+                else:
+                    print_error("La respuesta no contenía el primer mensaje esperado")
+            else:
+                print_error(f"Error en la respuesta de recuerdo: {data2}")
+
+            # ---------------------------
+            # Ahora crear chats de ejemplo: uno de hace 7 días y otro de hace 1 día
+            # ---------------------------
+            resp_week = await client.post(f"{BASE_URL}/api/v1/chats/create_sample?days_ago=7&title=Chat+Hace+7+días")
+            data_week = resp_week.json()
+            if resp_week.status_code == 200 and data_week.get('success'):
+                print_success("Chat de hace 7 días creado")
+            else:
+                print_error(f"No se pudo crear chat de hace 7 días: {data_week}")
+
+            resp_yesterday = await client.post(f"{BASE_URL}/api/v1/chats/create_sample?days_ago=1&title=Chat+Ayer")
+            data_y = resp_yesterday.json()
+            if resp_yesterday.status_code == 200 and data_y.get('success'):
+                print_success("Chat de ayer creado")
+            else:
+                print_error(f"No se pudo crear chat de ayer: {data_y}")
+
+            # Crear chats adicionales: hace 7, 30 y 365 días con nuevo endpoint
+            resp_samples = await client.post(f"{BASE_URL}/api/v1/chats/create_samples")
+            samples_data = resp_samples.json()
+            if resp_samples.status_code == 200 and samples_data.get('success'):
+                print_success("Chats de ejemplo (7,30,365 días) creados")
+            else:
+                print_error(f"No se pudieron crear chats de ejemplo: {samples_data}")
+
+            # Consultar listados y verificar que existe un chat en 'yesterday' y uno en 'this_week' y en 'this_month' y en 'older'
+            # Enviamos zona horaria del cliente para reproducibilidad de la prueba
+            list_resp = await client.get(f"{BASE_URL}/api/v1/chats?user_tz=UTC")
+            list_data = list_resp.json()
+            if list_resp.status_code == 200:
+                y_count = len(list_data.get('yesterday', []))
+                week_count = len(list_data.get('this_week', []))
+                if y_count >= 1:
+                    print_success("Se detectó al menos 1 chat en 'Ayer'")
+                else:
+                    print_error("No se detectaron chats en 'Ayer' cuando se esperaba al menos 1")
+                if week_count >= 1:
+                    print_success("Se detectó al menos 1 chat en 'Esta semana'")
+                else:
+                    print_error("No se detectaron chats en 'Esta semana' cuando se esperaba al menos 1")
+            else:
+                print_error("No se pudo listar chats para verificar agrupación")
+
+        except Exception as e:
+            print_error(f"Error: {e}")
+
+async def test_rag_reindex_and_query():
+    """Test de reindexado y recuperación RAG"""
+    print_test("RAG Reindex + Query")
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            # Reindexar toda la colección
+            resp = await client.post(f"{BASE_URL}/api/v1/rag/reindex")
+            data = resp.json()
+            if resp.status_code == 200 and data.get('success'):
+                print_success(f"Reindexado completado, docs añadidos: {data.get('added')}")
+            else:
+                print_error(f"Reindexado falló: {data}")
+                return
+
+            # Preguntar algo que debería estar en la base de conocimiento inicial
+            payload = {"message": "¿Qué es el IMC?", "chat_history": [], "include_wearable": False}
+            response = await client.post(f"{BASE_URL}/api/v1/chat/", json=payload)
+            resdata = response.json()
+
+            if response.status_code == 200 and resdata.get('success'):
+                print_success("Chat respondió correctamente tras reindex")
+                answer = resdata.get('response', '').lower()
+                if 'imc' in answer or 'índice de masa corporal' in answer:
+                    print_success("Respuesta contiene información relevante sobre IMC")
+                else:
+                    print_error("Respuesta no parece incluir información sobre IMC")
+            else:
+                print_error(f"Error en chat tras reindex: {resdata}")
+
+        except Exception as e:
+            print_error(f"Error: {e}")
     
     results = []
     

@@ -150,18 +150,27 @@ Question: {input}
 """
     
     def _get_user_profile_context(self) -> str:
-        """Formatea el perfil del usuario para el prompt"""
+        """Formatea el perfil del usuario para el prompt
+
+        Intenta obtener el perfil desde la memoria global (ChatMemoryDB) con clave
+        'user_profile'. Si no existe, cae en el perfil mock configurado en settings.
+        """
         from ..config import settings
-        profile = settings.mock_user_profile
+        try:
+            # Obtener perfil desde memoria global si existe
+            from ..database.chat_db import ChatMemoryDB
+            profile = ChatMemoryDB.get_global_memory('user_profile', settings.mock_user_profile)
+        except Exception:
+            profile = settings.mock_user_profile
         
         return f"""
 👤 PERFIL DEL USUARIO:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🎂 Edad: {profile.get('age', 'N/A')} años
-⚖️ Peso: {profile.get('weight_kg', 'N/A')} kg  
+⚖️ Peso: {profile.get('weight_kg', 'N/A')} kg
 📏 Altura: {profile.get('height_cm', 'N/A')} cm
 🚻 Género: {profile.get('gender', 'N/A')}
-🏃‍♂️ Nivel de actividad: {profile.get('activity_level', 'N/A')}
+🎯 Objetivo: {profile.get('goal', 'N/A')}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 """
 
@@ -203,6 +212,28 @@ Question: {input}
                     for msg in chat_history[-6:]
                 ])
                 full_input = f"HISTORIAL RECIENTE:\n{history_text}\n\nPREGUNTA ACTUAL: {message}"
+
+            # === RAG: Recuperar documentos relevantes y añadirlos al prompt ===
+            retrieved_docs = []
+            try:
+                from ..rag.vector_store import vector_store
+                if vector_store:
+                    # k configurable desde settings
+                    from ..config import settings
+                    retrieved_docs = vector_store.similarity_search(message, k=getattr(settings, 'rag_k', 4))
+            except Exception as e:
+                print(f"⚠️ RAG retrieval failed: {e}")
+
+            if retrieved_docs:
+                try:
+                    retrieved_texts = "\n\n".join([
+                        f"- {d['content'].strip()} (source: {d.get('metadata', {}).get('source', 'unknown')}, topic: {d.get('metadata', {}).get('topic', '')})"
+                        for d in retrieved_docs
+                    ])
+                    rag_context = f"CONOCIMIENTO RELEVANTE (recuperado por RAG):\n{retrieved_texts}\n\n"
+                    full_input = f"{rag_context}{full_input}"
+                except Exception as e:
+                    print(f"⚠️ Error formateando resultados RAG: {e}")
             
             # Si tenemos agente_executor, usarlo
             if self.agent_executor:
@@ -234,8 +265,11 @@ Question: {input}
                 print(f"💬 Procesando con LLM directo: {message[:50]}...")
                 
                 # Si hay datos del wearable, incluirlos en el mensaje
-                context = self._format_wearable_context()
-                full_input_with_context = f"{context}\n\nUsuario: {full_input}\nAsistente:"
+                wearable_context = self._format_wearable_context()
+                # Incluir también el perfil del usuario en el contexto para personalización
+                user_profile_context = self._get_user_profile_context()
+
+                full_input_with_context = f"{wearable_context}\n\n{user_profile_context}\n\nUsuario: {full_input}\nAsistente:"
                 
                 # Para LLM directo, usar el método invoke o generate
                 try:

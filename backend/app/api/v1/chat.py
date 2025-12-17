@@ -84,7 +84,57 @@ async def chat(request: ChatRequest, request_obj: Request, chat_id: Optional[str
         # Convertir historial a formato dict
         chat_history = [msg.dict() for msg in request.chat_history]
         
-        # Procesar mensaje
+        # ==================== Manejo especial: recordar primer mensaje ====================
+        msg_lower = request.message.lower()
+        recall_triggers = [
+            'primer mensaje',
+            'mi primer mensaje',
+            'recordar mi primer mensaje',
+            'recuerda mi primer mensaje',
+            'cuál fue mi primer mensaje',
+            'que fue mi primer mensaje',
+            'primer mensaje de esta conversación'
+        ]
+
+        if any(trigger in msg_lower for trigger in recall_triggers):
+            # Intentar obtener el primer mensaje del chat guardado
+            first_msg_text = None
+            if chat_id:
+                chat_obj = ChatMemoryDB.get_chat(chat_id)
+                if chat_obj and chat_obj.messages:
+                    for m in chat_obj.messages:
+                        if m.role == 'user':
+                            first_msg_text = m.content
+                            break
+            # Fallback: buscar en chat_history enviado por el cliente
+            if not first_msg_text and chat_history:
+                for m in chat_history:
+                    if m['role'] == 'user':
+                        first_msg_text = m['content']
+                        break
+
+            if first_msg_text:
+                response_text = f"¡Claro! Tu primer mensaje fue: \"{first_msg_text}\""
+            else:
+                response_text = "No encuentro el primer mensaje en esta conversación."
+
+            # Guardar la respuesta en el historial si corresponde
+            if chat_id:
+                try:
+                    ChatMemoryDB.add_message(chat_id, role='assistant', content=response_text)
+                except Exception as e:
+                    print(f"⚠️ Error guardando respuesta de 'recuerdo': {e}")
+
+            return ChatResponse(
+                response=response_text,
+                tools_used=[],
+                wearable_data=wearable_data,
+                model_info={"provider": agent.llm_provider, "model": agent.model_name},
+                success=True,
+                error=None
+            )
+
+        # Procesar mensaje normalmente
         result = agent.chat(
             message=request.message,
             chat_history=chat_history
